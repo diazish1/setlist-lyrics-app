@@ -1,4 +1,4 @@
-const CACHE = "setlist-lyrics-v11-universal-github-2";
+const CACHE = "setlist-lyrics-v11-universal-github-3";
 const APP_FILES = ["./", "./index.html", "./manifest.webmanifest", "./favicon.svg", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (event) => {
