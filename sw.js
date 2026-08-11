@@ -1,5 +1,5 @@
-const CACHE = "setlist-lyrics-v11-universal-github-1";
-const APP_FILES = ["./", "./index.html", "./manifest.webmanifest", "./favicon.svg"];
+const CACHE = "setlist-lyrics-v11-universal-github-2";
+const APP_FILES = ["./", "./index.html", "./manifest.webmanifest", "./favicon.svg", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(APP_FILES)));

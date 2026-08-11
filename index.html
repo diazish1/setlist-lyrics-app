@@ -11,6 +11,7 @@
 <meta name="description" content="Organize songs, build gig setlists, and keep lyrics ready on any device." />
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" />
 <title>Setlist Lyrics</title>
 <style>
   :root {
@@ -277,6 +278,7 @@
     <button id="manageSnapshotsBtn" class="btn">Saved Setlists</button>
     <button id="backupBtn" class="btn">Export Backup</button>
     <button id="restoreBtn" class="btn">Import Backup</button>
+    <button id="installAppBtn" class="btn dark">Install App</button>
     <input id="restoreInput" type="file" accept="application/json,.json" class="hidden" />
     <span id="saveStatus" class="status">Saved on this device</span>
   </div>
@@ -386,8 +388,17 @@
   </div>
 </dialog>
 
+<dialog id="installDialog">
+  <div class="modal">
+    <h2>Install Setlist Lyrics</h2>
+    <div id="installSteps" class="help"></div>
+    <div class="modal-actions"><button class="btn primary" data-close="installDialog">Got it</button></div>
+  </div>
+</dialog>
+
 <script>
 (() => {
+  let deferredInstallPrompt = null;
   'use strict';
   const STORAGE_KEY = 'setlistLyricsApp.v11.savedSnapshots';
   const DEFAULT_SECTION_DEFS = [
@@ -1243,6 +1254,31 @@
     reader.readAsText(file);
   }
 
+  function isStandaloneApp() {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  }
+
+  async function installApp() {
+    if (isStandaloneApp()) {
+      alert('Setlist Lyrics is already running as an installed app.');
+      return;
+    }
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      return;
+    }
+    const isAppleMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    $('installSteps').innerHTML = isAppleMobile
+      ? '<p><strong>On iPhone or iPad:</strong></p><ol><li>Open this page in Safari.</li><li>Tap the Share button.</li><li>Choose <strong>Add to Home Screen</strong>.</li><li>Tap <strong>Add</strong>.</li></ol><p>The app will appear on your Home Screen and open without browser controls.</p>'
+      : isAndroid
+        ? '<p><strong>On Android:</strong></p><ol><li>Open this page in Chrome.</li><li>Tap the browser menu (⋮).</li><li>Choose <strong>Install app</strong> or <strong>Add to Home screen</strong>.</li><li>Confirm the installation.</li></ol>'
+        : '<p>Open your browser menu and choose <strong>Install Setlist Lyrics</strong>, <strong>Install app</strong>, or <strong>Add to Home Screen</strong>. Chrome and Microsoft Edge show an install icon in the address bar when installation is available.</p>';
+    $('installDialog').showModal();
+  }
+
   $('setlistSelect').addEventListener('change', e => { state.activeSetlistId = e.target.value; selectedSongIds.clear(); sectionScrollPositions.clear(); saveState(); renderAll(); });
   $('newSetlistBtn').addEventListener('click', () => createSetlist(false));
   $('duplicateSetlistBtn').addEventListener('click', () => createSetlist(true));
@@ -1257,6 +1293,7 @@
   $('manageSnapshotsBtn').addEventListener('click', openSnapshotsDialog);
   $('backupBtn').addEventListener('click', exportBackup);
   $('restoreBtn').addEventListener('click', () => $('restoreInput').click());
+  $('installAppBtn').addEventListener('click', installApp);
   $('restoreInput').addEventListener('change', e => { if (e.target.files[0]) importBackup(e.target.files[0]); e.target.value = ''; });
   $('catalogSearchBtn').addEventListener('click', searchCatalog);
   $('catalogSearchInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); searchCatalog(); } });
@@ -1284,6 +1321,14 @@
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
   }
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+  });
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    $('installAppBtn').textContent = 'Installed';
+  });
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
   renderAll();
