@@ -1,0 +1,44 @@
+SETLIST LYRICS — VERSION 12.3
+=============================
+
+The MacBook and iPad editions have the same V12.3 features.
+Keep your working V12.2 copies as fallbacks while you test this update.
+
+CHANGES IN V12.3
+
+1. Import Backup now has the same font and styling as the other toolbar buttons.
+2. The main toolbar stays on ONE horizontal row. On narrow screens, swipe
+   horizontally over the toolbar to reveal any buttons beyond the right edge.
+3. The setlist dropdown now has a Delete button next to New, Duplicate,
+   and Rename. Deletion requires confirmation, is disabled in Performance
+   Mode, and cannot remove the last remaining setlist. Songs, lyrics, other
+   setlists, and saved snapshots are unaffected.
+4. In 2- and 3-column lyrics view, scroll each column independently.
+   In 1-column view, scrolling works as before. Moving to the next song
+   resets the new song to the top.
+5. Song Details uses a wider, denser form to reduce vertical scrolling.
+
+UPGRADING FROM V12.2
+
+1. In your working V12.2, select Export Backup and save the JSON file.
+2. Open the new V12.3 HTML in Safari (iPad) or Safari/Chrome (MacBook).
+3. If your latest songs and arrangements are not present, switch to EDIT MODE,
+   select Import Backup, choose the exported JSON, review the summary, and
+   select Replace & Import.
+4. Test the new behaviors before using V12.3 for a live gig.
+5. Export backups regularly.
+
+SAFETY AND STORAGE
+
+- V12.3 saves to a new browser storage key, so working V12.2 data is not
+  overwritten. Data from V12.2 may be copied automatically ONLY if both
+  editions have access to the same browser storage. Keep a JSON backup.
+- Import Backup REPLACES current app data; it does not merge or duplicate.
+- Deleting a setlist removes only that gig's arrangement, not shared songs.
+- The MacBook and iPad versions are feature-compatible but do not automatically
+  synchronize across devices. Use JSON backup/export to transfer changes.
+- These PERSONAL editions contain your song lyrics embedded in the HTML.
+  Do not publish these files in a public GitHub repository or Pages site.
+  A clean, no-lyrics build is needed before public hosting.
+
+This release is for testing. V12.2 remains your working fallback.
