@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#111827" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Setlist Lyrics" />
+<title>Setlist Lyrics — iPad Edition v12.2</title>
+<style>
+  :root {
+    --bg: #f3f4f6;
+    --panel: #ffffff;
+    --text: #111827;
+    --muted: #6b7280;
+    --line: #d1d5db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --danger: #b91c1c;
+    --shadow: 0 8px 24px rgba(17, 24, 39, .08);
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  button, input, textarea, select { font: inherit; }
+  button { cursor: pointer; }
+  .app { min-height: 100vh; }
+  header {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(17,24,39,.96); color: white;
+    padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.18);
+  }
+  .header-row { max-width: 1400px; margin: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .brand { font-weight: 800; font-size: 20px; margin-right: auto; white-space: nowrap; }
+  .setlist-select { min-width: 220px; max-width: 360px; flex: 1 1 220px; }
+  select, input, textarea {
+    border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: white; color: var(--text);
+  }
+  header select { border-color: #4b5563; }
+  .btn { border: 0; border-radius: 10px; padding: 10px 13px; font-weight: 700; background: #e5e7eb; color: #111827; }
+  .btn:hover { filter: brightness(.97); }
+  .btn.primary { background: var(--accent); color: white; }
+  .btn.dark { background: #374151; color: white; }
+  .btn.danger { background: #fee2e2; color: var(--danger); }
+  /* Keep the actual file input under the finger. iPad Safari can ignore a
+     scripted click on a file input with display:none. */
+  .file-picker { position: relative; display: inline-flex; justify-content: center; align-items: center; overflow: hidden; min-height: 42px; white-space: nowrap; }
+  .file-picker input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; padding: 0; border: 0; font-size: 100px; }
+  .file-picker.is-disabled { opacity: .45; pointer-events: none; }
+  .btn.small { padding: 7px 9px; font-size: 13px; }
+  .toolbar {
+    max-width: 1400px; margin: 14px auto 0; padding: 0 16px;
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  }
+  .search { flex: 1 1 260px; min-width: 220px; }
+  .status { color: var(--muted); font-size: 13px; margin-left: auto; }
+  main { max-width: 1400px; margin: 16px auto; padding: 0 16px 50px; }
+  .board { display: grid; grid-template-columns: repeat(4, minmax(260px, 1fr)); gap: 14px; align-items: stretch; }
+  .section {
+    background: var(--panel); border: 1px solid #e5e7eb; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+    display: flex; flex-direction: column; height: calc(100dvh - 190px); min-height: 420px; max-height: 780px;
+  }
+  .section-header { display: flex; align-items: center; gap: 8px; padding: 12px 12px 10px; border-bottom: 1px solid #e5e7eb; flex: 0 0 auto; }
+  .section-title { font-size: 16px; font-weight: 900; color: #b91c1c; margin: 0; flex: 1; min-width: 0; text-align: left; border: 0; background: transparent; padding: 5px 2px; border-radius: 6px; cursor: pointer; overflow-wrap: anywhere; }
+  .section-title:not(:disabled):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .section-title:disabled { cursor: default; opacity: 1; }
+  .count { font-size: 12px; font-weight: 800; color: var(--muted); background: #f3f4f6; padding: 4px 8px; border-radius: 999px; }
+  .section-actions { display: flex; gap: 5px; }
+  .song-list {
+    min-height: 96px; padding: 9px; flex: 1 1 auto; overflow-y: auto;
+    overscroll-behavior: contain; scrollbar-gutter: stable; scroll-behavior: auto;
+  }
+  .song-list::-webkit-scrollbar { width: 11px; }
+  .song-list::-webkit-scrollbar-thumb { background: #c7cdd6; border: 3px solid transparent; background-clip: padding-box; border-radius: 999px; }
+  .song-list::-webkit-scrollbar-track { background: transparent; }
+  .song-list.drag-over { outline: 3px solid var(--accent-soft); outline-offset: -4px; background: #eff6ff; }
+  .empty { padding: 24px 10px; text-align: center; color: #9ca3af; font-size: 14px; border: 2px dashed #e5e7eb; border-radius: 12px; }
+  .song-card {
+    position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 7px; align-items: center;
+    background: white; border: 1px solid #dbe1ea; border-radius: 12px; padding: 8px; margin-bottom: 8px;
+    box-shadow: 0 2px 7px rgba(17,24,39,.05); touch-action: pan-y;
+  }
+  .song-card.selected { border-color: var(--accent); background: #eff6ff; }
+  .song-card.dragging { opacity: .35; }
+  .drag-handle {
+    border: 0; background: #f3f4f6; border-radius: 8px; width: 30px; height: 36px; font-size: 18px; color: #4b5563;
+    display: grid; place-items: center; cursor: grab; touch-action: none; user-select: none;
+  }
+  .song-main { min-width: 0; border: 0; background: transparent; text-align: left; padding: 1px 2px; }
+  .song-title { font-weight: 850; color: #1d4ed8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .song-label-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .song-label-row .song-title { flex: 1; min-width: 0; }
+  .vocal-star { flex: 0 0 auto; color: #e5a000; font-size: 20px; line-height: 1; text-shadow: 0 1px 1px #9b6a00; }
+  .song-meta { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+  .card-actions { display: flex; align-items: center; gap: 4px; }
+  .icon-btn { border: 0; background: #f3f4f6; border-radius: 8px; min-width: 31px; height: 32px; padding: 0 7px; font-weight: 800; }
+  .move-menu { max-width: 108px; padding: 7px 6px; font-size: 12px; }
+  .mobile-order { display: none; }
+  .selection-bar {
+    display: none; position: sticky; bottom: 12px; z-index: 20; max-width: 760px; margin: 16px auto 0;
+    background: #111827; color: white; border-radius: 14px; padding: 10px; box-shadow: 0 10px 25px rgba(0,0,0,.28); gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  .selection-bar.show { display: flex; }
+  .selection-bar .selection-count { font-weight: 800; margin-right: auto; }
+  dialog { border: 0; border-radius: 18px; padding: 0; width: min(720px, calc(100vw - 24px)); box-shadow: 0 24px 80px rgba(0,0,0,.32); }
+  dialog::backdrop { background: rgba(17,24,39,.58); }
+  .modal { padding: 18px; }
+  .modal h2 { margin: 0 0 14px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field.full { grid-column: 1 / -1; }
+  label { font-size: 13px; font-weight: 800; color: #374151; }
+  textarea { min-height: 120px; resize: vertical; }
+  .lyrics-area { min-height: 280px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height: 1.45; }
+  .catalog-panel {
+    grid-column: 1 / -1; border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 14px; padding: 12px; margin-bottom: 2px;
+  }
+  .catalog-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 9px; }
+  .catalog-head strong { color: #1d4ed8; }
+  .catalog-head span { color: var(--muted); font-size: 12px; }
+  .catalog-search-row { display: flex; gap: 8px; }
+  .catalog-search-row input { flex: 1 1 auto; min-width: 0; }
+  .catalog-status { min-height: 18px; margin-top: 7px; font-size: 12px; color: var(--muted); }
+  .catalog-results { display: grid; gap: 7px; margin-top: 7px; max-height: 260px; overflow-y: auto; }
+  .catalog-result {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center;
+    padding: 9px 10px; background: white; border: 1px solid #dbeafe; border-radius: 10px;
+  }
+  .catalog-result-title { font-weight: 850; color: #1d4ed8; }
+  .catalog-result-meta { color: var(--muted); font-size: 12px; margin-top: 2px; line-height: 1.35; }
+  .catalog-note { color: var(--muted); font-size: 11px; margin-top: 7px; line-height: 1.35; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  #performanceDialog {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    border-radius: 0;
+  }
+  .performance { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+  .performance-top { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 8px; }
+  .performance-title { flex: 1; min-width: 0; }
+  .performance-title h2 { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .performance-title div { color: var(--muted); font-size: 13px; margin-top: 3px; }
+  .lyrics-display { white-space: pre-wrap; overflow: auto; padding: 10px 16px; font-size: 22px; line-height: 1.32; flex: 1; min-height: 0; background: #fff; }
+  .lyrics-display.single-column { display: block; }
+  .lyrics-display.two-column {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 32px; align-content: start; white-space: normal;
+  }
+  .lyrics-display.three-column { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; align-content: start; white-space: normal; }
+  .lyrics-column { white-space: pre-wrap; min-width: 0; overflow-wrap: anywhere; }
+  .lyrics-column + .lyrics-column { border-left: 2px solid #e5e7eb; padding-left: 32px; }
+  .lyrics-display.three-column .lyrics-column + .lyrics-column { padding-left: 22px; }
+  .lyrics-display.editable { cursor: text; }
+  .lyrics-display.editable:hover { background: #f8fbff; }
+  .inline-lyrics-editor { flex: 1 1 auto; min-height: 0; width: 100%; padding: 18px 28px; border: 0; border-radius: 0; resize: none; font-family: inherit; line-height: 1.45; background: #fffef4; }
+  .inline-editor-bar { display: flex; gap: 10px; align-items: center; justify-content: flex-end; padding: 8px 14px; background: #fff8df; border-top: 1px solid #f0df9d; }
+  .inline-editor-bar span { flex: 1; color: #785c13; font-weight: 700; font-size: 13px; }
+  .performance-navigation { display: flex; align-items: center; gap: 10px; width: 100%; }
+  .performance-navigation > .performance-title { text-align: center; }
+  .performance-tools { display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 6px 10px; border-bottom: 1px solid #e5e7eb; }
+  .mode-btn { font-weight: 900; white-space: nowrap; border: 1px solid transparent; }
+  .mode-btn.mode-edit { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+  .mode-btn.mode-locked { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+  .lyrics-display.align-left, .lyrics-display.align-left .lyrics-column { text-align: left; }
+  .lyrics-display.align-center, .lyrics-display.align-center .lyrics-column { text-align: center; }
+  .lyrics-display.align-right, .lyrics-display.align-right .lyrics-column { text-align: right; }
+  .align-group { display: inline-flex; gap: 4px; align-items: center; }
+  .align-group .btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .performance-bottom { border-top: 1px solid #e5e7eb; padding: 5px 8px; display: flex; gap: 8px; justify-content: center; }
+
+  .focus-restore { display: none; position: fixed; top: calc(8px + env(safe-area-inset-top)); right: 8px; z-index: 80; opacity: .88; }
+  .performance.focus-mode .performance-top,
+  .performance.focus-mode .performance-tools,
+  .performance.focus-mode .performance-bottom { display: none; }
+  .performance.focus-mode .focus-restore { display: inline-flex; }
+  .performance.focus-mode .lyrics-display { padding-top: calc(12px + env(safe-area-inset-top)); padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+  .ghost { position: fixed; z-index: 9999; pointer-events: none; opacity: .88; transform: rotate(1deg); width: min(360px, calc(100vw - 30px)); }
+  .drop-marker {
+    position: relative; height: 5px; background: var(--accent); border-radius: 999px;
+    margin: 2px 6px 9px; box-shadow: 0 0 0 2px rgba(37,99,235,.14);
+    pointer-events: none; flex: 0 0 auto;
+  }
+  .drop-marker::before,
+  .drop-marker::after {
+    content: ""; position: absolute; top: 50%; width: 11px; height: 11px;
+    background: var(--accent); border: 2px solid white; border-radius: 50%;
+    transform: translateY(-50%); box-shadow: 0 1px 4px rgba(17,24,39,.28);
+  }
+  .drop-marker::before { left: -5px; }
+  .drop-marker::after { right: -5px; }
+  .help { color: var(--muted); font-size: 13px; line-height: 1.45; margin-top: 10px; }
+  .hidden { display: none !important; }
+
+  /* iPad Edition: touch-first sizing and layouts */
+  @media (min-width: 700px) and (max-width: 1400px) and (pointer: coarse) {
+    header { padding-left: 18px; padding-right: 18px; }
+    .header-row, .toolbar, main { max-width: none; }
+    .brand { font-size: 22px; }
+    .btn { min-height: 46px; padding: 11px 15px; }
+    .btn.small { min-height: 42px; padding: 9px 11px; font-size: 14px; }
+    select, input, textarea { min-height: 46px; font-size: 16px; }
+    .toolbar { gap: 10px; padding: 0 18px; }
+    main { padding-left: 18px; padding-right: 18px; }
+    .board { gap: 16px; }
+    .section { min-height: 500px; height: calc(100dvh - 205px); max-height: none; }
+    .section-header { padding: 14px; }
+    .section-title { font-size: 18px; }
+    .song-list { padding: 11px; -webkit-overflow-scrolling: touch; }
+    .song-card { grid-template-columns: 46px minmax(0,1fr) auto; gap: 10px; padding: 10px; margin-bottom: 10px; min-height: 64px; }
+    .drag-handle { width: 46px; height: 46px; font-size: 24px; border-radius: 11px; }
+    .song-main { min-height: 46px; display: flex; flex-direction: column; justify-content: center; }
+    .song-title { font-size: 17px; }
+    .song-meta { font-size: 13px; }
+    .icon-btn { min-width: 44px; height: 44px; }
+    .move-menu { min-height: 44px; max-width: 118px; font-size: 13px; }
+    .mobile-order { display: inline-flex; }
+    dialog:not(#performanceDialog) { width: min(820px, calc(100vw - 40px)); }
+    .modal { padding: 22px; }
+    .lyrics-area { min-height: 360px; }
+    .performance-top { padding: calc(10px + env(safe-area-inset-top)) 14px 10px; gap: 10px; }
+    .performance-top .btn, .performance-bottom .btn { min-height: 46px; font-size: 14px; }
+    .performance-title h2 { font-size: 24px; }
+    .performance-title div { font-size: 14px; }
+    .lyrics-display { font-size: 26px; line-height: 1.38; padding: 18px 28px; -webkit-overflow-scrolling: touch; }
+    .lyrics-display.two-column { gap: 42px; }
+    .lyrics-display.three-column { gap: 20px; }
+    .lyrics-display.three-column .lyrics-column + .lyrics-column { padding-left: 20px; }
+    .lyrics-column + .lyrics-column { padding-left: 42px; }
+    .performance-bottom { padding: 9px 12px calc(9px + env(safe-area-inset-bottom)); gap: 10px; }
+    .selection-bar { bottom: 18px; padding: 12px; }
+  }
+
+  @media (min-width: 900px) and (max-width: 1400px) and (orientation: landscape) and (pointer: coarse) {
+    .board { grid-template-columns: repeat(4, minmax(210px, 1fr)); }
+    .section { height: calc(100dvh - 205px); min-height: 420px; }
+    .card-actions .mobile-order { display: none; }
+    .song-card { grid-template-columns: 46px minmax(0,1fr) auto; }
+  }
+
+  @media (min-width: 700px) and (max-width: 1100px) and (orientation: portrait) and (pointer: coarse) {
+    .board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .section { height: 620px; min-height: 520px; }
+    .lyrics-display { font-size: 25px; }
+  }
+
+  @media (max-width: 1050px) {
+    .board { grid-template-columns: repeat(2, minmax(260px, 1fr)); }
+    .section { height: min(68dvh, 680px); min-height: 380px; }
+  }
+  @media (max-width: 650px) {
+    .brand { width: 100%; }
+    .header-row { gap: 8px; }
+    .setlist-select { order: 2; flex-basis: calc(100% - 105px); min-width: 0; }
+    .board { grid-template-columns: 1fr; }
+    .section { height: min(66dvh, 620px); min-height: 340px; }
+    .mobile-order { display: inline-flex; }
+    .move-menu { max-width: 88px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .catalog-search-row { flex-direction: column; }
+    .catalog-result { grid-template-columns: 1fr; }
+    .field.full { grid-column: auto; }
+    #performanceDialog { width: 100vw; height: 100dvh; max-width: none; max-height: none; border-radius: 0; }
+    .performance-top { padding: calc(8px + env(safe-area-inset-top)) 8px 8px; }
+    .performance-title h2 { font-size: 18px; }
+    .performance-title div { font-size: 12px; }
+    .lyrics-display { font-size: 18px; padding: 12px 14px; line-height: 1.4; }
+    .lyrics-display.two-column, .lyrics-display.three-column { grid-template-columns: 1fr; gap: 20px; }
+    .lyrics-column + .lyrics-column { border-left: 0; padding-left: 0; border-top: 2px solid #e5e7eb; padding-top: 20px; }
+    .lyrics-display.three-column .lyrics-column + .lyrics-column { padding-left: 0; }
+    .performance-navigation { gap: 5px; }
+    .performance-navigation .btn { min-height: 42px; }
+    .performance-tools { padding: 6px 8px; gap: 5px; }
+    .inline-lyrics-editor { padding: 14px; }
+    .performance-bottom { padding: 7px 8px calc(7px + env(safe-area-inset-bottom)); }
+    .performance-top .btn { padding: 7px 8px; font-size: 12px; }
+    .song-card { grid-template-columns: 30px minmax(0, 1fr) auto; }
+    .status { width: 100%; margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="header-row">
+      <div class="brand" title="Version 12.2 iPad Edition">🎹 Setlist Lyrics <span style="font-size:12px;font-weight:700;opacity:.72">iPad v12.2</span></div>
+      <select id="setlistSelect" class="setlist-select" aria-label="Choose setlist"></select>
+      <button id="newSetlistBtn" class="btn dark">New</button>
+      <button id="duplicateSetlistBtn" class="btn dark">Duplicate</button>
+      <button id="renameSetlistBtn" class="btn dark">Rename</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <button id="setLockBtn" class="btn mode-btn mode-edit" type="button" aria-pressed="false">🔓 EDIT MODE</button>
+    <input id="searchInput" class="search" type="search" placeholder="Search songs, artists, notes, or lyrics…" />
+    <button id="addSetBtn" class="btn">+ Add Set</button>
+    <button id="addSongBtn" class="btn primary">+ Add Song</button>
+    <button id="selectModeBtn" class="btn">Select Multiple</button>
+    <button id="saveSnapshotBtn" class="btn">Save Setlist</button>
+    <button id="manageSnapshotsBtn" class="btn">Saved Setlists</button>
+    <button id="backupBtn" class="btn">Export Backup</button>
+    <label id="restoreBtn" class="btn file-picker">Import Backup
+      <input id="restoreInput" type="file" accept="application/json,.json" aria-label="Choose a Setlist Lyrics backup JSON file" />
+    </label>
+    <span id="importStatus" class="status" role="status" aria-live="polite"></span>
+    <span id="saveStatus" class="status">Saved on this device</span>
+  </div>
+
+  <main>
+    <div id="board" class="board"></div>
+    <div id="selectionBar" class="selection-bar">
+      <span id="selectionCount" class="selection-count">0 selected</span>
+      <select id="bulkMoveSelect" aria-label="Move selected songs">
+        <option value="">Move selected to…</option>
+      </select>
+      <button id="clearSelectionBtn" class="btn small">Clear</button>
+    </div>
+  </main>
+</div>
+
+<dialog id="songDialog">
+  <form id="songForm" class="modal" method="dialog">
+    <h2 id="songDialogTitle">Add Song</h2>
+    <input id="songId" type="hidden" />
+    <input id="songCatalogId" type="hidden" />
+    <div class="form-grid">
+      <div class="catalog-panel">
+        <div class="catalog-head"><strong>Search song catalog</strong><span>Internet required only for searching</span></div>
+        <div class="catalog-search-row">
+          <input id="catalogSearchInput" type="search" placeholder="Song title or song + artist…" autocomplete="off" />
+          <button id="catalogSearchBtn" type="button" class="btn primary">Search</button>
+        </div>
+        <div id="catalogStatus" class="catalog-status">Search and import title, artist, album, year, genre, and duration.</div>
+        <div id="catalogResults" class="catalog-results"></div>
+        <div class="catalog-note">Catalog search uses Apple’s public iTunes Search API. Lyrics, key, tempo, MainStage patch, and performance notes remain yours to add.</div>
+      </div>
+      <div class="field"><label for="songTitle">Song title</label><input id="songTitle" required /></div>
+      <div class="field"><label for="songArtist">Artist</label><input id="songArtist" /></div>
+      <div class="field"><label for="songAlbum">Album</label><input id="songAlbum" /></div>
+      <div class="field"><label for="songYear">Release year</label><input id="songYear" inputmode="numeric" maxlength="4" /></div>
+      <div class="field"><label for="songGenre">Genre</label><input id="songGenre" /></div>
+      <div class="field"><label for="songDuration">Duration</label><input id="songDuration" placeholder="e.g., 4:32" /></div>
+      <div class="field"><label for="songKey">Key</label><input id="songKey" /></div>
+      <div class="field"><label for="songTempo">Tempo</label><input id="songTempo" placeholder="e.g., 120 BPM" /></div>
+      <div class="field full"><label for="songPatch">MainStage patch / starting sound</label><input id="songPatch" /></div>
+      <div class="field full"><label for="songLyricsLayout">Lyrics view for this song</label><select id="songLyricsLayout"><option value="single">Single column with scrolling</option><option value="two">Two columns</option><option value="three">Three columns</option></select></div>
+      <div class="field full"><label for="songVocalRange">Within my vocal range?</label><select id="songVocalRange"><option value="no">No</option><option value="yes">Yes — show a star before the song title</option></select></div>
+      <div class="field full"><label for="songLyricsAlign">Lyrics alignment for this song</label><select id="songLyricsAlign"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></div>
+      <div class="field full"><label for="songNotes">Performance notes</label><textarea id="songNotes" placeholder="Count-in, cues, ending, keyboard notes…"></textarea></div>
+      <div class="field full"><label for="songLyrics">Lyrics</label><textarea id="songLyrics" class="lyrics-area" placeholder="Paste the lyrics here…"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button id="deleteSongBtn" type="button" class="btn danger hidden">Delete Song</button>
+      <button type="button" class="btn" data-close="songDialog">Cancel</button>
+      <button type="submit" class="btn primary">Save Song</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="snapshotsDialog">
+  <div class="modal">
+    <h2>Saved Setlists</h2>
+    <div id="snapshotsList" style="display:grid;gap:10px;max-height:55vh;overflow:auto;"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn" data-close="snapshotsDialog">Close</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="importConfirmDialog">
+  <div class="modal">
+    <h2>Restore this backup?</h2>
+    <p id="importSummary"></p>
+    <p class="help">Importing replaces the current song library, setlists, and saved snapshots on this device. If you want to keep the current arrangement, export a backup of it first.</p>
+    <div class="modal-actions">
+      <button id="cancelImportBtn" class="btn" type="button">Cancel</button>
+      <button id="confirmImportBtn" class="btn primary" type="button">Replace &amp; Import</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="performanceDialog">
+  <div id="performancePanel" class="performance">
+    <button id="focusRestoreBtn" class="btn small focus-restore">Controls</button>
+    <div class="performance-top">
+      <div class="performance-navigation">
+        <button id="prevSongBtn" class="btn small">◀ Previous</button>
+        <div class="performance-title">
+          <h2 id="performanceSongTitle"></h2>
+          <div id="performanceSongMeta"></div>
+        </div>
+        <button id="nextSongBtn" class="btn small primary">Next ▶</button>
+      </div>
+    </div>
+    <div class="performance-tools">
+      <button id="songLockBtn" class="btn small mode-btn mode-edit" type="button" aria-pressed="false">🔓 EDIT MODE</button>
+      <label for="lyricsLayoutSelect">Lyrics</label>
+      <select id="lyricsLayoutSelect" aria-label="Lyrics column layout"><option value="single">1 Column</option><option value="two">2 Columns</option><option value="three">3 Columns</option></select>
+      <div class="align-group" role="group" aria-label="Lyrics alignment">
+        <button id="alignLeftBtn" class="btn small" type="button" title="Align lyrics left">Left</button>
+        <button id="alignCenterBtn" class="btn small" type="button" title="Center lyrics">Center</button>
+        <button id="alignRightBtn" class="btn small" type="button" title="Align lyrics right">Right</button>
+      </div>
+      <button id="focusLyricsBtn" class="btn small">Focus</button>
+      <button id="editFromPerformanceBtn" class="btn small">Details</button>
+      <button class="btn small" data-close="performanceDialog">Close</button>
+    </div>
+    <div id="performanceLyrics" class="lyrics-display" title="Tap lyrics to edit when unlocked"></div>
+    <textarea id="inlineLyricsEditor" class="inline-lyrics-editor hidden" aria-label="Edit this song's lyrics directly"></textarea>
+    <div id="inlineEditorBar" class="inline-editor-bar hidden">
+      <span>Editing lyrics directly</span>
+      <button id="cancelInlineBtn" class="btn small" type="button">Cancel</button>
+      <button id="saveInlineBtn" class="btn small primary" type="button">Done ✓ Save</button>
+    </div>
+    <div class="performance-bottom">
+      <button id="decreaseFontBtn" class="btn">A−</button>
+      <button id="increaseFontBtn" class="btn">A+</button>
+      <span id="editHint" class="help">Tap lyrics to edit • Lock before performing</span>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="helpDialog">
+  <div class="modal">
+    <h2>How to use it</h2>
+    <p><strong>Desktop:</strong> each section has its own vertical scroll. Hover over a section and use the mouse wheel or trackpad to scroll only that section.</p>
+    <p><strong>Reordering:</strong> drag the dotted handle. A blue line appears between songs to show exactly where the song will be placed when you release it.</p>
+    <p><strong>Add or remove sets:</strong> use + Add Set in the toolbar. Use the minus button in a section header to remove that section; its songs are moved safely to Shelf.</p>
+    <p><strong>iPhone/iPad:</strong> press and drag the dotted handle, or use the ↑/↓ buttons and the Move menu.</p>
+    <p><strong>Multiple songs:</strong> choose Select Multiple, tap the songs, then drag the handle on any selected song. The whole group moves together and keeps its order.</p>
+    <p><strong>Lyrics layout:</strong> each song can use one, two, or three columns. Choose the layout in the lyrics viewer or in song details.</p>
+    <p><strong>Performance Lock:</strong> use the Edit Mode / Performance Mode button on either screen. Locked mode prevents editing, song moves, set changes, imports, and restoring old arrangements, while allowing lyrics navigation, scrolling, font size, columns, and alignment.</p>
+    <p><strong>Quick editing:</strong> when unlocked, tap the lyrics themselves to open an editor. Tap Done to save or Cancel to discard. The Details button still edits the other song fields.</p>
+    <p><strong>Vocal range:</strong> mark Within my vocal range? as Yes in song details. A gold star appears before its name in every set.</p>
+    <p><strong>Lyrics alignment:</strong> use Left, Center, or Right in the lyrics view. Alignment is remembered separately for each song and also appears in Edit Song.</p>
+    <p><strong>Saved setlists:</strong> Save Setlist stores a snapshot of the current section structure and song order, including added sections such as Set 3. Loading a saved setlist restores that arrangement without deleting songs you added later; newer songs are moved to Shelf.</p>
+    <p><strong>Online song search:</strong> Add Song can search Apple’s public iTunes catalog and import title, artist, album, year, genre, and duration. Internet is only needed for the search itself; your setlists and lyrics remain local and work offline.</p>
+    <p><strong>Backups:</strong> Switch to 🔓 EDIT MODE before importing. Tap Import Backup to choose a .json file from the iPad Files picker. Export Backup regularly; importing replaces the current library, active setlists, and snapshots.</p>
+    <div class="modal-actions"><button class="btn primary" data-close="helpDialog">Got it</button></div>
+  </div>
+</dialog>
+
+<script>
+(() => {
+  'use strict';
+  // Separate storage protects the stable V11 build. First launch copies V11 data.
+  const STORAGE_KEY = 'setlistLyricsApp.ipad.v12';
+  const LEGACY_STORAGE_KEY = 'setlistLyricsApp.v11.savedSnapshots';
+  const DEFAULT_SECTION_DEFS = [
+    { key: 'set1', title: 'SET 1', kind: 'set' },
+    { key: 'set2', title: 'SET 2', kind: 'set' },
+    { key: 'encore', title: 'ENCORE', kind: 'encore' },
+    { key: 'shelf', title: 'SHELF', kind: 'shelf' }
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const uid = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+  const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
+  const escapeHtml = (value) => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+
+  let state = loadState();
+  let selectMode = false;
+  let selectedSongIds = new Set();
+  let currentPerformanceSongId = null;
+  let performanceFontSize = 22;
+  let touchDrag = null;
+  let inlineEditing = false;
+  let pendingImportState = null;
+  const sectionScrollPositions = new Map();
+
+  function defaultState() {
+    return {"version":3,"songs":[{"id":"song-001","title":"Rocky Mountain Way","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Spent the last year\nRocky Mountain Way\nCouldn't get much higher\nOut to pasture\nThink it's safe to say\nTime to open fire\n\n\nAnd we don't need the ladies\nCrying 'cause the story's sad\n\n\n'Cause the Rocky Mountain Way\nIs better than the way we had\n\n\nWell, he's tellin' us this\nAnd he's tellin' us that\nChanges it every day\nSays it doesn't matter\nBases are loaded and Casey's at bat\nPlayin' it play by play\nTime to change the batter\n\n\nAnd we don't need the ladies\nCrying 'cause the story's sad\n\n\nRocky Mountain Way\nIs better than the way we had\n\n\n—- Interlude —-\n—- Instrumentals —-"},{"id":"song-002","title":"Hard to Handle","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Verse 1]\nBaby, here I am, I'm the man on the scene\nI can give you what you want, but you gotta come home with me\nI've got some good old lovin', and I got some more in store\nWhen I get through throwin' it on you, you got to come back for more\n\n\n[Chorus]\nBoys and things that come by the dozen\nThat ain't nothin' but drugstore lovin'\nHey little thing, let me light your candle\n'Cause, mama, I'm so hard to handle now\nYes sir, I'm\n\n\n[Verse 2]\nAction speaks louder than words, and I'm a man of great experience\nI know you got another man, but I can love you better than him\nTake my hand, don't be afraid, I'm gonna prove every word I say\nI'm advertising love for free, so you can place your ad with me\n\n\n[Chorus]\nBoys will come along, a dime by the dozen\nThat ain't nothin' but ten cent lovin'\nHey little thing, let me light your candle\n'Cause, mama, I'm so hard to handle now\nYes sir, I'm\nYeah\nHard to handle, now\nOh baby\n\n\n[Verse 3]\nBaby, here I am, I'm the man on your scene\nI can give you what you want, but you gotta come home with me\nI've got some good old lovin', and I got some more in store\nWhen I get through throwin' it on you, you gotta come a'runnin' back for more\n\n\n[Chorus]\nBoys will run along, a dime by the dozen\nThat ain't nothin' but drugstore lovin'\nHey little thing, let me light your candle\n'Cause, mama, I'm so hard to handle now\nHard, hard to handle now\nHard to handle now\nOh yeah, yeah, yeah\n\n\n[Guitar Solo]\n\n\n[Chorus]\nBoys will run along, a dime by the dozen\nThat ain't nothing but ten cent lovin'\nHey little babe, let me light your candle\n'Cause, mama, I'm so hard to handle now\nYes sir, I'm\nYeah\nSo hard to handle now\nOh, yeah\n[Outro]\nBaby\nGood lovin'\nBaby\nBaby\nOh, good lovin'\nI need good lovin'\nI got to have, oh yeah\nYeah\nSo hard to handle, now, yeah"},{"id":"song-003","title":"Double Vision","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Feeling down n' dirty, feeling kinda mean\nI've been from one to another extreme\nThis time I had a good time, ain't got time to wait\nI want to stick around till I can't see straight\n\n\nFill my eyes with that double vision, \nno disguise for that double vision\nOoh, when it gets through to me, \nit's always new to me\nMy double vision gets the best of me\n\n\nNever do more than I really need\nMy mind is racing, but my body's in the lead\nTonight's the night, I'm gonna push it to the limit\nI live all of my years in a single minute\n\n\nFill my eyes with that double vision, \nno disguise for that double vision\nOoh, when it gets through to me, \nit's always new to me\nMy double vision always seems to get the best of me, \nthe best of me, yeah\n\n\nOoh, double vision, I need my double vision\nIt takes me out of my head, takin' me out of my head\nI get my double vision, oh, seeing double double\nOh, I have double vision, (oh double vision) yeah\nOh I'm getting double vision"},{"id":"song-004","title":"China Grove","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"When the sun comes up on a sleepy little town\nDown around San Antone\nAnd the folks are risin' for another day\n'Round about their homes\n\n\nThe people of the town are strange\nAnd they're proud of where they came\nWell, you talkin' 'bout your China Grove\n(talkin' 'bout your china grove)\nWhoa, oh (whoa, oh) China Grove\n\n\nWell the preacher and the teacher\nLord, they're a caution\nThey are the talk of the town\nWhen the gossip gets to flyin' and they ain't lyin'\nWhen the sun goes underground\n\n\nThey say that the father's insane\nAnd dear Mrs. Perkin's a game\nWell, talkin' 'bout your China Grove\n(talkin' 'bout your china grove)\nWhoa, oh (whoa, oh) China Grove\n\n\nBut everyday there's a new thing comin'\n(ooh)\nThe ways of an oriental view\n(ooh)\nThe sheriff and his buddies with their samurai swords\n(ooh)\nYou can even hear the music at night\n\n\nThough it's a part of the Lone Star State\n(ooh)\nPeople don't seem to care\n(ooh)\nThey just keep on lookin' to the east\n\n\nTalkin' 'bout your China Grove\n(talkin' 'bout your china grove)\nWhoa, oh (whoa, oh) China Grove"},{"id":"song-005","title":"Hold On Loosely","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"You see it all around you\nGood lovin' gone bad\nAnd usually it's too late when you\nRealize what you had\n\n\nAnd my mind goes back to a girl I left\nLong years ago who told me\n\n\nJust hold on loosely\nBut don't let go\nIf you cling too tightly\nYou're gonna lose control\n\n\nYour baby needs someone to believe in\nAnd a whole lot of space to breathe in\n\n\nIt's so damn easy\nWhen your feelings are such\nTo overprotect her\nTo love her too much\n\n\nAnd my mind goes back to a girl I left\nLong years ago who told me\n\n\nJust hold on loosely\nBut don't let go\nIf you cling too tightly\nYou're gonna lose control\n\n\nYour baby needs someone to believe in\nAnd a whole lot of space to breathe in\n\n\nDon't let her slip away\nSentimental fool\nDon't let your heart get in the way\nYeah, yeah, yeah\n\n\nYou see it all around you\nGood lovin' gone bad\nAnd usually it's too late when you\nRealize what you had\n\n\nSo hold on loosely\nBut don't let go\nIf you cling too tightly\nYou're gonna lose control\n\n\nYour baby needs someone to believe in\nAnd a whole lot of space to breathe in\n\n\nSo hold on loosely\nBut don't let go\nIf you cling too tightly\nYou're gonna lose it\nYou're gonna lose control\n\n\nYeah, yeah, yeah, yeah\n\n\nSo hold on loosely\nBut don't let go\nIf you cling too tightly\nYou're gonna lose control\n\n\nHold on loosely\nBut don't let go\nIf you cling too tightly to her\nYou're gonna lose control, yeah, yeah, yeah"},{"id":"song-006","title":"Born To Be Wild","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"V1\nGet your motor runnin'\nHead out on the highway\nLookin' for adventure\nAnd whatever comes our way\n\nPre-C\nYeah, darlin', go make it happen\nTake the world in a love embrace\nFire all of your guns at once and\nExplode into space        –   2nd time to Pre-C2\n\nV2\nI like smoke and lightnin'\nHeavy metal thunder\nRacin' with the wind\nAnd the feelin' that I'm under\n\nPre-C\n\nPre-C2\nLike a true nature's child\nWe were born, born to be wild\nWe can climb so high\nI never wanna die\n\nBorn to be wild\nBorn to be wild\n\n—- Interlude —- then TOP"},{"id":"song-007","title":"Cant You See","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"I'm gonna take a freight train\nDown at the station, Lord\nI don't care where it goes\nGonna climb a mountain\nThe highest mountain\nI'll jump off, nobody gonna know\n\n\nChorus\nCan't you see, whoa, can't you see\nWhat that woman, Lord, she been doin' to me?\nCan't you see, can't you see\nWhat that woman, she's been doin' to me?\n\n\nI'm gonna find me a hole in the wall\nI'm gonna crawl inside and die\n'Cause my lady, now a mean ol' woman, Lord\nNever told me goodbye\n\n\nChorus\n\n\nI've gone to buy a ticket now, as far as I can\nAin't a-never coming back\nRide me a southbound, all the way to Georgia now\n'Til the train, it run out of track\n\n\n- Interlude - \n\n\nCan't you see (oh, she's such a crazy lady), can't you see\nWhat that woman (what that woman) she been doin' to me?\nCan't you see (Lord, I can't stand), can't you see\nWhat that woman (oh), she been doin' to me\n\n\nCan't you see (I'm gonna take a freight train), can't you see (I'm down at the station, Lord)\nWhat that woman, she been doin' to me (ain't never comin' back, oh boy)\nCan't you see (gonna ride me a southbound, now)\nCan't you see (all the way to Georgia, Lord)\nWhat that woman, she been doin' to me? ('Til the train run out of track, oh)"},{"id":"song-008","title":"Shine","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Give me a word\nGive me a sign\nShow me where to look\nTell me, what will I find?\nWhat will I find?\n\nLay me on the ground\nAnd fly me in the sky\nShow me where to look\nTell me, what will I find?\nWhat will I find?\n\nYeah - Yeah - Yeah\n\nWhoa, Heaven let your light shine down\nWhoa, Heaven let your light shine down\nWhoa, Heaven let your light shine down\nWhoa, Heaven let your light shine down\n\nLove is in the water\nLove is in the air\nShow me where to look\nTell me, will love be there?\nLove be there?\n\nTeach me how to speak\nTeach me how to share\nTeach me where to go\nTell me, will love be there?\nLove be there?\n\nYeah - Yeah - Yeah\n\nWhoa, Heaven let your light shine down\nWhoa, Heaven let your light shine down\nWhoa, Heaven let your light shine down\nWhoa, Heaven let your light shine down\n—- Interlude —-\nGive me a word\nGive me a sign\nShow me where to look\nTell me, what will I find?\nWhat will I find?\n\nLay me on the ground\nAnd fly me in the sky\nShow me where to look\nTell me, what will I find?\nWhat will I find?\n\nYeah - Yeah - Yeah\n\nWhoa, Heaven let your light shine down\nWhoa, Heaven let your light shine down\nWhoa, Heaven let your light shine down\nWhoa, Heaven let your light shine down\n\nI'm gonna let it shine\nI'm gonna let it shine\nHeaven's little light gonna shine on me\nHey, yeah, hey, yeah\nHeaven's little light gonna shine on me\n(Shine) Shine on me, yeah\n(Shine) Come on and shine"},{"id":"song-009","title":"Too Much Time On My Hands","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Yeah, I'm sittin' on this barstool, Talkin' like a damn fool\nGot the twelve o'clock news blues\n\n\nAnd I've given up hope, On the afternoon soaps, And a bottle of cold brew\n\n\nIs it any wonder I'm not crazy, Is it any wonder I'm sane at all\n\n\nWell, I'm so tired of losin', I got nothin' to do, With all day to do it\n\n\nWell, I'd go out cruisin', But I've no place to go, And all night to get there\n\n\nIs it any wonder I'm not a criminal, Is it any wonder I'm not in jail\n\n\nIs it any wonder I've got too much time on my hands\nIt's tickin' away with my sanity, I've got too much time on my hands\nIt's hard to believe such a calamity\nI've got too much time on my hands, And it's tickin' away, Tickin' away from me\nIt's t-t-t-t-t-tickin' away\n(Too much time on my hands), Now I don't know what to do\n(Too much time on my hands)\n\n\nNow I'm a jet fuel genius, I can solve the world's problems, Without even trying\n\n\nI've got dozens of friends, And the fun never ends, That is, as long as I'm buying\n\n\nIs it any wonder I'm not the President, Is it any wonder I'm null and void\n\n\nIs it any wonder I've got too much time on my hands\nIt's tickin' away with my sanity, I've got too much time on my hands\nIt's hard to believe such a calamity\nI've got too much time on my hands, And it's tickin' away, Tickin' away from me\nT-t-t-t-t-t-t-tickin' away\nAnd I don't know what to do with myself, Mmm\nT-t-t-t-tickin' away, Mmm\n\n\nToo much time on my hands\nToo much time on my"},{"id":"song-010","title":"Shooting Star","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Johnny was a schoolboy, When he heard his first Beatles song\n\"Love Me Do\", I think it was, And from there, it didn't take him long\n\nGot himself a guitar, Used to play every night\nNow he's in a rock and roll outfit, And everything's all right\nDon't ya know\n\nJohnny told his mama, Hey, mama, I'm going away\nI'm gonna hit the big time, Gonna be a big star someday\n\nMama came to the door, With a teardrop in her eye\nJohnny said, \"don't cry, mama\", \"Smile and wave goodbye\"\nDon't you know (yeah, yeah)\n\nDon't you know, That you are a shooting star\nDon't you know, don't you know, \nDon't you know that you are, A shooting star, \nAnd all the world will love you, Just as long, as long as you are\n\nJohnny made a record, Went straight up to number one\nSuddenly everyone loved to hear him sing his song\nWatching the world go by, Surprising it goes so fast\nJohnny looked around him and said, \"Well, I made the big time at last\"\nDon't you know, Don't you know\n\nDon't you know, That you are a shooting star\nDon't you know, whoa, yeah\nDon't you know that you are, A shooting star, yeah\nAnd all the world will love you, Just as long, as long as you are\nA shooting star\n- interlude - \nDon't you know, That you are a shooting star\nDon't you know, ooh\nDon't you know that you are, A shooting star\nAnd all the world will love you, Just as long, as long as you are\n\nJohnny died one night, Died in his bed\nBottle of whiskey, sleeping tablets, By his head\n\nJohnny's life passed him by, Like a warm summer day\nIf you listen to the wind, You can still hear him play\nOoh\n\nDon't you know that you are a shooting star\nDon't you know, don't you know\nDon't you know that you are a shooting star\nDon't you know\nDon't you know that you are a shooting star\nDon't you, don't you, don't you, don't you, don't you know, don't you\nKnow, oh, that you are, A shooting star, yeah\nOoh, ooh, ooh, woo\nDon't you, don't you know, That you are a shooting star\nDon't you, don't you know\n\nNah Nah Nah Nah Nah Nah, Nah Nah Nah Nah Nah Nah \nNah Nah \nNah Nah Nah Nah Nah Nah, Nah Nah Nah Nah Nah Nah \nNah Nah "},{"id":"song-011","title":"Pride and Joy","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Well you've heard about love givin' sight to the blind\nMy baby's lovin' cause the sun to shine\nShe's my sweet little thang, she's my pride and joy\nShe's my sweet little baby, I'm her little lover boy\n\n\nYeah I love my baby, heart and soul\nLove like ours won't never grow old\nShe's my sweet little thang, she's my pride and joy\nShe's my sweet little baby, I'm her little lover boy\n\n\nYeah I love my lady, she's long and lean\nYou mess with her, you'll see a man get mean\nShe's my sweet little thang, she's my pride and joy\nShe's my sweet little baby, I'm her little lover boy\n\n\nWell I love my baby, like the finest wine\nStick with her until the end of time\nShe's my sweet little thang, she's my pride and joy\nShe's my sweet little baby, I'm her little lover boy\n\n\nYeah I love my baby, my heart and soul\nLove like ours won't never grow old\nShe's my sweet little thang, she's my pride and joy\nShe's my sweet little baby, I'm her little lover boy"},{"id":"song-012","title":"Just what i needed","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Verse 1]\nI don't mind you comin' here\nAnd wastin' all my time\n\n'Cause when you're standin' oh, so near\nI kinda lose my mind\nIt's not the perfume that you wear\nIt's not the ribbons in your hair\n\nAnd I don't mind you comin' here\nAnd wastin' all my time\n\n\n[Verse 2]\nI don't mind you hangin' out\nAnd talkin' in your sleep\n\nIt doesn't matter where you've been\nAs long as it was deep, yeah\n\nYou always knew to wear it well, and\nYou look so fancy, I can tell\n\nAnd I don't mind you hangin' out\nAnd talkin' in your sleep\n\n[Chorus]\nI guess you're just what I needed (Just what I needed)\nI needed someone to feed\n\nI guess you're just what I needed (Just what I needed)\nI needed someone to bleed\n\n[Verse 1]\nI don't mind you comin' here\nAnd wastin' all my time, time\n\n'Cause when you're standin' oh, so near\nI kinda lose my mind, yeah\nIt's not the perfume that you wear\nIt's not the ribbons in your hair\nAnd I don't mind you comin' here\nAnd wastin' all my time\n\n[Chorus]\nI guess you're just what I needed (Just what I needed)\n\nI needed someone to feed\nI guess you're just what I needed (Just what I needed)\nI needed someone to bleed\nI guess you're just what I needed (Just what I needed)\nI needed someone to feed\nI guess you're just what I needed (Just what I needed)\nI needed someone to bleed\nYeah, yeah, so bleed me\n\n[Outro]\n\n(You're just what I needed)\n(You're just what I needed)\n(You're just what I needed)\nYeah, yeah-yeah"},{"id":"song-013","title":"The Middle","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Hey, don't write yourself off yet\nIt's only in your head, you feel left out\nOr looked down on\n\n\nJust try your best\nTry everything you can\nAnd don't you worry what they tell themselves\nWhen you're away\n\n\nIt just takes some time\nLittle girl, you're in the middle of the ride\nEverything, everything'll be just fine\nEverything, everything'll be alright, alright\n\n\nHey, you know they're all the same\nYou know you're doing better on your own (on your own)\nSo don't buy in\n\n\nLive right now\nYeah, just be yourself\nIt doesn't matter if it's good enough (good enough)\nFor someone else\n\n\nIt just takes some time\nLittle girl, you're in the middle of the ride\nEverything, everything'll be just fine\nEverything, everything'll be alright, alright\n\n\nIt just takes some time\nLittle girl, you're in the middle of the ride\nEverything, everything'll be just fine\nEverything, everything'll be alright, alright\n\n\n- interlude - \nHey, don't write yourself off yet\nIt's only in your head, you feel left out (feel left out)\nOr looked down on\n\n\nJust do your best (just do your best)\nDo everything you can (do everything you can)\nAnd don't you worry what their bitter hearts (bitter hearts)\nAre gonna say\n\n\nIt just takes some time\nLittle girl, you're in the middle of the ride\nEverything, everything'll be just fine\nEverything, everything'll be alright, alright\n\n\nIt just takes some time\nLittle girl, you're in the middle of the ride\nEverything, everything'll be just fine\nEverything, everything'll be alright"},{"id":"song-014","title":"Gimme Three Steps","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"I was cutting a rug, Down at place called The Jug with a girl named Linda Lou, \nWhen in walked a man with a gun in his hand, And he was looking for you know who\nHe said, \"Hey there, fellow, With the hair colored yellow Whatcha tryin' to prove? \n'Cause that's my woman there, And I'm a man who cares, And this might be all for you\"\nI said, \"excuse me?\"\n\n\nI was scared and fearing for my life, I was shaking like a leaf on a tree\n'Cause he was lean, mean, Big and bad, Lord pointin' that gun at me, \n\"Oh, wait a minute, mister I didn't even kiss her, Don't want no trouble with you\nAnd I know you don't owe me, But I wish you'd let me ask one favor from you\"\n\n\n\"Oh, won't you\nGimme three steps, gimme three steps, mister\nGimme three steps towards the door?\nGimme three steps, gimme three steps, mister\nAnd you'll never see me no more\"\n\n\nFor, sure\n\n\nWell the crowd cleared away and I began to pray and the water fell on the floor\nAnd I'm telling you, son well, it ain't no fun staring straight down a forty-four\nWell, he turned and screamed at Linda Lou and that's the break I was looking for\nAnd you could hear me screaming a mile away as I was headed out toward your door\n\n\n\"Oh, won't you\nGimme three steps, gimme three steps, mister\nGimme three steps towards the door?\nGimme three steps, gimme three steps, mister\nAnd you'll never see me no more\"\n\n\nShow me the back door"},{"id":"song-015","title":"You Really Got Me","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Verse 1]\nGirl, you really got me now\nYou got me so I don't know what I'm doin'\nGirl, you really got me now\nYou got me so I can't sleep at night\n\n[Chorus]\nGirl, you really got me now\nYou got me so I don't know where I'm goin', yeah\nOh yeah, you really got me now\nYou got me so I can't sleep at night\nYou really got me (Oh-oh)\nYou really got me (Wo-oh)\nYou really got me\n\n[Verse 2]\nPlease, don't ever let me be\nI only want to be by your side\nPlease, don't ever let me be\nI only want to be by your side\n\n[Chorus]\nGirl, you really got me now\nYou got me so I don't know what I'm doing, yeah\nOh, yeah, you really got me now\nYou got me so I can't sleep at night\nYou really got me (Ah-ah)\nYou really got me (Ah-ah)\nYou really got me\nOh, no, no!"},{"id":"song-016","title":"Knockin on Heavens Door","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Mama take this badge from me\nI can't use it anymore\nIt's getting dark too dark to see\nFeels like I'm knockin' on Heaven's door\n\nKnock-knock-knockin' on Heaven's door\nKnock-knock-knockin' on Heaven's door\nKnock-knock-knockin' on Heaven's door\nKnock-knock-knockin' on Heaven's door\n\nMama put my guns in the ground\nI can't shoot them anymore\nThat cold black cloud is comin' down\nFeels like I'm knockin' on Heaven's door\n\nKnock-knock-knockin' on Heaven's door\nKnock-knock-knockin' on Heaven's door\nKnock-knock-knockin' on Heaven's door\nKnock-knock-knockin' on Heaven's door\n\n\"You just better start sniffin' your own rank subjugation jack\n'Cause it's just you against your tattered libido\nThe bank and the mortician, forever man\nAnd it wouldn't be luck if you could get out of life alive\"\n\nKnock-knock-knockin' on Heaven's door\n(Knock-knock-knockin' on Heaven's door)\nKnock-knock-knockin' on Heaven's door\n(Knock-knock-knockin' on Heaven's door)\n\nKnock-knock-knockin' on Heaven's door\n(Knock-knock-knockin' on Heaven's door)\nKnock-knock-knockin' on Heaven's door\n(Knock-knock-knockin' on Heaven's door)\n\nKnock-knock-knockin' on Heaven's door\nKnock-knock-knockin' on Heaven's door\nKnock-knock-knockin' on Heaven's door\nKnock-knock-knockin' on Heaven's door"},{"id":"song-017","title":"Comfortably Numb","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Hello\nIs there anybody in there?\nJust nod if you can hear me\nIs there anyone at home?\n\n\nCome on now\nI hear you're feeling down\nWell, I can ease your pain\nGet you on your feet again\n\n\nRelax\nI'll need some information first\nJust the basic facts\nCan you show me where it hurts?\n\n\nThere is no pain, you are receding\nA distant ship smoke on the horizon\nYou are only coming through in waves\nYour lips move but I can't hear what you're saying\nWhen I was a child I had a fever\nMy hands felt just like two balloons\nNow I've got that feeling once again\nI can't explain, you would not understand\nThis is not how I am\nI have become comfortably numb\nI have become comfortably numb\n\n\nO.K.\nJust a little pin prick\nThere'll be no more ah!\nBut you may feel a little sick\n\n\nCan you stand up?\nI do believe it's working, good\nThat'll keep you going through the show\nCome on, it's time to go\n\n\nThere is no pain you are receding\nA distant ship smoke on the horizon\nYou are only coming through in waves\nYour lips move but I can't hear what you're saying\nWhen I was a child\nI caught a fleeting glimpse\nOut of the corner of my eye\nI turned to look but it was gone\nI cannot put my finger on it now\nThe child is grown\nThe dream is gone\nI have become comfortably numb"},{"id":"song-018","title":"All Right Now","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"There she stood in the street\nSmiling from her head to her feet\nI said hey, what is this\nNow baby, maybe she's in need of a kiss\nI said hey, what's your name baby\nMaybe we can see things the same\nNow don't you wait or hesitate\nLet's move before they raise the parking rate\n\n\nAll right now baby, it's all right now\nAll right now baby, it's all right now\n\n\nI took her home to my place\nWatching every move on her face\nShe said look, what's your game baby\nAre you tryin' to put me in shame\nI said slow don't go so fast\nDon't you think that love can last\nShe said love, Lord above\nNow you're tryin' to trick me in love\n\n\nAll right now baby, it's all right now\nAll right now baby, it's all right now\n\n\nAll right now baby, it's all right now\nAll right now baby, it's all right now\n\n\nAll right now baby, it's all right now\nAll right now baby, it's all right now\n\n\nAll right now baby, it's all right now\nAll right now baby, it's all right now"},{"id":"song-019","title":"Good Times Roll - The Cars","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Verse 1]\nLet the good times roll\nLet them knock you around\nLet the good times roll\nLet them make you a clown\n\n[Chorus]\nLet them leave you up in the air\nLet them brush your rock and roll hair\nAnd let the good times roll\nLet the good times roll, oh\nLet the good times roll\n\n[Verse 2]\nLet the stories be told\nLet them say what they want\nLet the photos be old\nLet them show what they want\n\n[Chorus]\nLet them leave you up in the air\nLet them brush your rock and roll hair\nLet the good times roll\nLet the good times roll, oh\nWon't you let the good times roll"},{"id":"song-020","title":"Rock and Roll Fantasy","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Here come the jesters, one, two, three\nIt's all part of my fantasy\nI love the music and I love to see the crowd\nDancing in the aisles and singin' out loud, yeah, yeah\n\n\nHere come the dancers one by one\nYour momma's callin' but you're having fun\nYou find you're dancin' on the number 9 cloud\nPut your hands together now and sing it out loud\n\n\nIt's all part of my rock and roll fantasy, yeah\nIt's all part of my rock and roll dream, yeah\n- interlude - \nIt's all part of my rock and roll fantasy\nIt's all part of my rock and roll dream, yeah\n\n\nPut out the spotlights, one and all\nThen let the feelin' get down to your soul\nThe music's so loud, you can hear the sound\nReaching for the sky, churnin' up the ground\n\n\nIt's all part of my rock and roll fantasy\nIt's all part of my rock and roll dream, oh, yeah\nIt's all part of my rock and roll fantasy\nIt's all part of my rock and roll dream, yeah\n\n\nFantasy, yeah\nFantasy, yeah"},{"id":"song-021","title":"Addicted To Love","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"The lights are on, but you're not home\nYour mind is not your own\nYour heart sweats, your body shakes\nAnother kiss is what it takes\nYou can't sleep, you can't eat\nThere's no doubt, you're in deep\nYour throat is tight, you can't breathe\nAnother kiss is all you need\nOh ooh\n\n\nYou like to think that you're immune to the stuff...oh yeah\nIt's closer to the truth to say you can't get enough\nYou know you're gonna have to face it\nYou're addicted to love\n\n\nYou see the signs, but you can't read\nYou're running at a different speed\nYour heart beats in double time\nAnother kiss and you'll be mine, a one-track mind\nYou can't be saved\nOblivion is all you crave\nIf there's some left for you\nYou don't mind if you do\nOh ooh\n\n\nYou like to think that you're immune to the stuff\n\n\nIt's closer to the truth to say you can't get enough\nYou know you're gonna have to face it\nYou're addicted to love\n\n\nMight as well face it, you're addicted to love // 8x\n\n\nYour Addicted to love // 2x\n\n\nMight as well face it, you're addicted to love // 2x\n\n\nMight as well face it // 3x\n\n\nMight as well face it, you're addicted to love // 2x\n\n\nYour lights are on, but you're not home\nYour will is not your own\nYour heart sweats and teeth grind\nAnother kiss and you'll be mine\nOh ooh\n\n\nYou like to think that you're immune to the stuff\nIt's closer to the truth to say you can't get enough\nYou know you're gonna have to face it\nYou're addicted to love\n\n\nMight as well face it, you're addicted to love // 8x\n\n\nMight as well face it\n\n\nMight as well face it, you're addicted to love\n\n\nMight as well face it // 3x\n\n\nMight as well face it, you're addicted to love // 4x"},{"id":"song-022","title":"Hey Hey What Can I Do","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Verse 1]\nWant to tell you about the girl I love\nMy, she looks so fine\nShe's the only one that I been dreaming of\nMaybe someday she will be all mine\nI want to tell her that I love her so\nI thrill with her every touch\nI need to tell her she's the only one I really love\n\n\n[Chorus]\nI got a woman, want to ball all day\nI got a woman, she won't be true, no\nI got a woman, stay drunk all the time\nI said, I got a little woman, and she won't be true\n\n\n[Verse 2]\nOn Sunday morning, when we go down to church\nSee the menfolk standing in line\nSay they come to pray to the Lord\nBut when my little girl looks so fine\nIn the evening, when the sun is sinking low\nEverybody's with the one they love\nI walk the town\nKeep a-searching all around\nLooking for my street-corner girl\n\n\n[Chorus]\nI got a woman, want to ball all day, yeah\nI got a woman, she won't be true, no, no\nI got a woman, stay drunk all the time\nI said, I got a little woman, and she won't be true\n\n\n[Verse 3]\nIn the bars, with the men who play guitars\nSinging, drinking, and remembering the times\nMy little lover does a midnight shift\nShe followed around all of the time\nI guess there's just one thing a-left for me to do\nGoing to pack my bags and move on my way\n'Cause I got a worried mind\nSharing what I thought was mine\nGoing to leave her where the guitars play\n\n\n[Chorus]\nI got a woman, she won't be true, no, no\nI got a woman, want to ball all day, yeah, yeah, naw, naw\nI got a woman, stay drunk all the time\nI got a little woman, and she won't be true\n\n\n[Outro]\n(Hey, hey, what can I do?)\nI said she won't be true, naw\nYeah, no, yeah, no\n(No, no, what can I say?)\nYeah, no, yeah, no\nAwwwww\n(Hey, hey, what can I do?)\nKeep on, keep on, keep on, keep on, keep on, keep on, keep on\n(No, no, what can I say?)\nShe wanna ball\n(Hey, hey, what can I do?)\nOh, keep on, keep on, keep on, keep on, keep on, yeah-yeah\n(No, no, what can I say?)\nI boogie, I boogie too, I boogie, I boogie too\n(Hey, hey, what can I do?)\nAw yeah, aw yeah, aw yeah, aw yeah\n(No, no, what can I say?)\nHey, hey, what can I do? I got a woman, she won't be true\n(Hey, hey, what can I do?)\nOhohohoh, hear what I say, I got a woman, wanna ball all day\n(No, no, what can I say?)\nKeep on, keep on, ooooh-ho-ho-ho-ho\n(Hey, hey, what can I do?)\nOooohh..."},{"id":"song-023","title":"Keep Your Hands to Yourself","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Verse 1]\nI got a little change in my pocket going jing-a-ling-a-ling\nWanna call you on the telephone, baby, I give you a ring\nBut each time we talk, I get the same old thing\nAlways, \"No huggee, no kissee until I get a wedding ring\"\n\n\n[Chorus]\nMy honey, my baby\nDon't put my love upon no shelf\nShe said, \"Don't hand me no lines and keep your hands to yourself\"\n\n\n[Verse 2]\nOoh, baby, baby, baby\nWhy you gonna treat me this way?\nYou know I'm still your loverboy\nI still feel the same way\nThat's when she told me a story 'bout free milk and a cow\nAnd said, \"No huggee, no kissee until I get a wedding vow\"\n\n\n[Chorus]\nMy honey, my baby\nDon't put my love upon no shelf\nShe said, \"Don't hand me no lines and keep your hands to yourself\"\n\n\n[Guitar Solo]\n(Oh go, man go!)\n\n\n[Verse 3]\nOver here\nYou see, I wanted her real bad and I was about to give in\nThat's when she started talking about true love\nStarted talking about sin\nI said\n\"Honey, I'll live with you for the rest of my life\"\nShe said\n\"No huggee, no kissee until you make me a wife\"\n\n\n[Chorus]\nMy honey, my baby\nDon't put my love upon no shelf\nShe said, \"Don't hand me no lines and keep your hands to yourself\""},{"id":"song-024","title":"Hotel California","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"On a dark desert highway, \ncool wind in my hair\nWarm smell of colitas, \nrising up through the air\nUp ahead in the distance, \nI saw a shimmering light\nMy head grew heavy and my sight grew dim\nI had to stop for the night\n\n\nThere she stood in the doorway\nI heard the mission bell\nAnd I was thinking to myself\n\"This could be Heaven or this could be Hell\"\nThen she lit up a candle \nand she showed me the way\nThere were voices down the corridor\nI thought I heard them say\n\n\nWelcome to the Hotel California\nSuch a lovely place (Such a lovely place)\nSuch a lovely face\nPlenty of room at the Hotel California\nAny time of year (Any time of year)\nYou can find it here\n\n\nHer mind is Tiffany-twisted, \nshe got the Mercedes bends\nShe got a lot of pretty, \npretty boys she calls friends\nHow they dance in the courtyard, \nsweet summer sweat\nSome dance to remember, \nsome dance to forget\n\n\nSo I called up the Captain\n\"Please bring me my wine.\"\nHe said, \"We haven't had that spirit here since nineteen sixty nine.\"\nAnd still those voices are calling from far away\nWake you up in the middle of the night\nJust to hear them say\n\n\nWelcome to the Hotel California\nSuch a lovely place (Such a lovely place)\nSuch a lovely face\nThey livin' it up at the Hotel California\nWhat a nice surprise (what a nice surprise)\nBring your alibis\n\n\nMirrors on the ceiling\nThe pink champagne on ice\nAnd she said \"We are all just prisoners here, of our own device\"\nAnd in the master's chambers\nThey gathered for the feast\nThey stab it with their steely knives\nBut they just can't kill the beast\n\n\nLast thing I remember\nI was running for the door\nI had to find the passage back to the place I was before\n\"Relax,\" said the night man\n\"We are programmed to receive\nYou can check-out any time you like\nBut you can never leave!\""},{"id":"song-025","title":"Old Time Rock and Roll","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Just take those old records off the shelf\nI'll sit and listen to 'em by myself\nToday's music ain't got the same soul\nI like that old time rock 'n' roll\n\n\nDon't try to take me to a disco\nYou'll never even get me out on the floor\nIn ten minutes I'll be late for the door\nI like that old time rock 'n' roll\n\n\nStill like that old time rock 'n' roll\nThat kind of music just soothes the soul\nI reminisce about the days of old\nWith that old time rock 'n' roll (oh)\n\n\nWon't go to hear 'em play a tango\nI'd rather hear some blues or funky old soul\nThere's only one sure way to get me to go\nStart playing old time rock 'n' roll\n\n\nCall me a relic, call me what you will\nSay I'm old-fashioned, say I'm over the hill\nToday's music ain't got the same soul\nI like that old time rock 'n' roll\n\n\nStill like that old time rock 'n' roll\nThat kind of music just soothes the soul\nI reminisce about the days of old\nWith that old time rock 'n' roll (oh)\n\n\nStill like that old time rock 'n' roll\nThat kind of music just soothes the soul\nI reminisce about the days of old\nWith that old time rock 'n' roll\n\n\nStill like that old time rock 'n' roll\nThat kind of music just soothes the soul\nI reminisce about the days of old\nWith that old time rock 'n' roll (hey)\n\n\nStill like that old time rock 'n' roll\nThat kind of music just soothes the soul\nI reminisce about the days of old\nWith that old time rock 'n' roll\n\n\nStill like that old time rock 'n' roll"},{"id":"song-026","title":"Hurts So Good","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Intro]\n\n\n[Verse 1]\nWhen I was a young boy\nSaid put away those young boy ways\nNow that I'm getting older, so much older\nI long for those young boy days\nWith a girl like you\nWith a girl like you\nLord knows there are things we can do, baby\nJust me and you\nCome on and make it a\n\n\n[Chorus]\nHurt so good\nCome on, baby, make it hurt so good\nSometimes love don't feel like it should\nYou make it hurt so good\n\n\n[Verse 2]\nYou don't have to be so exciting\nJust trying to give myself a little bit of fun, yeah\nYou always look so inviting\nYou ain't as green as you are young\nHey, baby, it's you\nCome on, girl, now it's you\nSink your teeth right through my bones, baby\nLet's see what we can do\nCome on and make it a\n\n\n[Chorus]\nHurt so good\nCome on, baby, make it hurt so good\nSometimes love don't feel like it should\nYou make it\nA-hurt so good\n\n\n[Bridge]\nI ain't talking no big deals\nI ain't made no plans myself\nI ain't talking no high heels\nMaybe we could walk around all day long\nWalk around all day long\nUh\n\n\n[Chorus]\nHurt so good\nCome on, baby, make it hurt so good\nSometimes love don't feel like it should\nYou make it hurt so good\nHurt so good (Come on baby, now)\nCome on, baby, make it hurt so good\nSometimes love don't feel like it should\nYou make it hurt so good\n\n\n[Outro]\nHey, hey"},{"id":"song-027","title":"Man In The Box","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"I'm the man in the box\nBuried in my pit\nWon't you come and save me, save me?\n\n\nFeed my eyes. Can you sew them shut?\nJesus Christ, deny your maker\nHe who tries will be wasted\nFeed my eyes. Now you've sewn them shut\n\n\nI'm the dog who gets beat\nShove my nose in spit\nWon't you come and save me, save me?\n\n\nFeed my eyes. Can you sew them shut?\nJesus Christ, deny your maker\nHe who tries will be wasted\nFeed my eyes. Now you've sewn them shut\n\n\nFeed my eyes. Can you sew them shut?\nJesus Christ, deny your maker\nHe who tries will be wasted\nFeed my eyes. Now you've sewn them shut"},{"id":"song-028","title":"Honky Tonk Woman","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"I met a gin soaked, bar-room queen in Memphis\nShe tried to take me upstairs for a ride\nShe had to heave me right across her shoulder\n'Cause I just can't seem to drink you off my mind\n\n\nIt's the honky tonk women\nThat gimme, gimme, gimme the honky tonk blues\n\n\nI laid a divorcee in New York City\nI had to put up some kind of a fight\nThe lady then she covered me in roses\nShe blew my nose and then she blew my mind\n\n\nIt's the honky tonk women\nThat gimme, gimme, gimme the honky tonk blues\n\n\nIt's the honky tonk women\nThat gimme, gimme, gimme the honky tonk blues\nIt's the honky tonk women\nThat gimme, gimme, gimme the honky tonk blues"},{"id":"song-029","title":"Simple Man","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Verse 1]\nMama told me when I was young\n\"Come sit beside me, my only son\nAnd listen closely to what I say\nAnd if you do this, it'll help you some sunny day, ah yeah\"\n\n\n[Break]\n(Be a simple man)\n\n\n[Verse 2]\nOh, take your time, don't live too fast\nTroubles will come and they will pass\nYou'll find a woman, yeah, and you'll find love\nAnd don't forget, son, there is someone up above\n\n\n[Chorus]\nAnd be a simple kind of man\nOh, be something you love and understand\nBaby, be a simple kind of man\nOh, won't you do this for me, son, if you can?\n\n\n[Verse 3]\nForget your lust for the rich man's gold\nAll that you need is in your soul\nAnd you can do this, oh, baby, if you try\nAll that I want for you, my son, is to be satisfied\n\n\n[Chorus]\nAnd be a simple kind of man\nOh, be something you love and understand\nBaby, be a simple kind of man\nOh, won't you do this for me, son, if you can?\nOh, yes, I will\n\n\n[Guitar Solo]\n\n\n[Verse 4]\nBoy, don't you worry, you'll find yourself\nFollow your heart and nothing else\nAnd you can do this, oh, baby, if you try\nAll that I want for you, my son, is to be satisfied\n\n\n[Chorus]\nAnd be a simple kind of man\nOh, be something you love and understand\nBaby, be a simple kind of man\nOh, won't you do this for me, son, if you can?\n\n\n[Outro]\nBaby, be a simple, be a simple man\nOh, be something you love and understand\nBaby, be a simple kind of man"},{"id":"song-030","title":"Summer Of '69","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"I got my first real six-string\nBought it at the five-and-dime\nPlayed it 'til my fingers bled\nWas the summer of '69\n\n\nMe and some guys from school\nHad a band and we tried real hard.\nJimmy quit, Jody got married\nI should've known we'd never get far\n\n\nOh, when I look back now\nThat summer seemed to last forever\nAnd if I had the choice\nYeah, I'd always wanna be there\nThose were the best days of my life\n\n\nAin't no use in complainin'\nWhen you've got a job to do\nSpent my evenings down at the drive-in\nAnd that's when I met you, yeah\n\n\nStandin' on your mama's porch\nYou told me that you'd wait forever\nOh, and when you held my hand\nI knew that it was now or never\nThose were the best days of my life\n\n\nOh, yeah.\nBack in the summer of '69, oh.\n\n\nMan we were killin' time\nWe were young and restless\nWe needed to unwind\nI guess nothin' can last forever, forever, no! yeah!\n\n\nAnd now the times are changin'\nLook at everything that's come and gone\nSometimes when I play that old six-string\nI think about you, wonder what went wrong\n\n\nStandin' on your mama's porch\nYou told me that it'd last forever\nOh, and when you held my hand\nI knew that it was now or never\nThose were the best days of my life\n\n\nOh, yeah.\nBack in the summer of '69, oh.\nIt was the summer of '69, oh, yeah.\nMe and my baby in '69, oh.\nIt was the summer, the summer, the summer of '69, yeah."},{"id":"song-031","title":"Jenny Jenny","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Verse 1]\nJenny, Jenny, who can I turn to?\nYou give me somethin' I can hold on to\nI know you think I'm like the others before\nWho saw your name and number on the wall\n\n\n[Chorus]\nJenny, I got your number\nI need to make you mine\nJenny, don't change your number\n867-5309 (867-5309)\n867-5309 (867-5309)\n\n\n[Verse 2]\nJenny, Jenny, you're the girl for me\nOh, you don't know me, but you make me so happy\nI tried to call you before, but I lost my nerve\nI tried my imagination, but I was disturbed\n\n\n[Chorus]\nJenny, I got your number\nI need to make you mine\nJenny, don't change your number\n867-5309 (867-5309)\n867-5309 (867-5309)"},{"id":"song-032","title":"Plush","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"And I feel that time's a wasted go\nSo where ya going 'til tomorrow?\nAnd I see that these are lies to come\nSo would you even care?\n\n\nAnd I feel it\nAnd I feel it\n\n\nWhere ya going for tomorrow?\nWhere ya going with the mask I found?\nAnd I feel, and I feel\nWhen the dogs begin to smell her\nWill she smell alone?\n\n\nAnd I feel, so much depends on the weather\nSo is it raining in your bedroom?\nAnd I see, that these are the eyes of disarray\nWould you even care?\n\n\nAnd I feel it\nAnd she feels it\n\n\nWhere ya going for tomorrow?\nWhere ya going with the mask I found?\nAnd I feel, and I feel\nWhen the dogs begin to smell her\nWill she smell alone?\n\n\nWhen the dogs do find her\nGot time, time, to wait for tomorrow\nTo find it, to find it, to find it\nWhen the dogs do find her\nGot time, time, to wait for tomorrow\nTo find it, to find it, to find it\n\n\nWhere ya going for tomorrow?\nWhere ya going with the mask I found?\nAnd I feel, and I feel\nWhen the dogs begin to smell her\nWill she smell alone?\n\n\nWhen the dogs do find her\nGot time, time, to wait for tomorrow\nTo find it, to find it, to find it\nWhen the dogs do find her\nGot time, time, to wait for tomorrow\nTo find it, to find it, to find it\nTo find it\nTo find it\nTo find it"},{"id":"song-033","title":"Sweet Child O' Mine","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"She's got a smile that it seems to me\nReminds me of childhood memories\nWhere everything was as fresh as the bright blue sky (Sky)\nNow and then when I see her face\nShe takes me away to that special place\nAnd if I stared too long I'd probably break down and cry\n\n\nWhoa-oh-oh! Sweet child o' mine\nWhoa, oh-oh-oh! Sweet love of mine\n\n\nShe's got eyes of the bluest skies\nAs if they thought of rain\nI hate to look into those eyes and see an ounce of pain\nHer hair reminds me of a warm, safe place\nWhere as a child I'd hide\nAnd pray for the thunder and the rain to quietly pass me by\n\n\nWhoa-oh-oh! Sweet child o' mine\nOoh, oh-oh-oh! Sweet love of mine\n\n\nOh yeah! Whoa-oh-oh-oh! Sweet child o' mine\nOoh-oh, oh, oh! Sweet love of mine\nWhoa, oh-oh-oh! Sweet child o' mine, ooh yeah\nOoh! Sweet love of mine\n\n\nWhere do we go?\nWhere do we go now?\nWhere do we go?\nOoh, where do we go?\nWhere do we go now?\nOh, where do we go now?\nWhere do we go? (Sweet child)\nOoh, where do we go now?\nAy, ay, ay, ay, ay, ay, ay, ay\nWhere do we go now? Ah-ah-ah-ah-ah, wow\nWhere do we go?\nOh, where do we go now?\nOh, where do we go?\nWhere do we go now?\nWhere do we go?\nOoh, where do we go now?\nNow, now, now, now, now, now, now\nSweet child, sweet child o' mine"},{"id":"song-034","title":"Rock and Roll All Night","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"… You show us everything you've got\nYou keep on dancin' and the room gets hot\nYou drive us wild, we'll drive you crazy\nYou say you wanna go for a spin\nThe party's just begun, we'll let you in\nYou drive us wild, we'll drive you crazy\nYou keep on shoutin', you keep on shoutin'\n\n\n… I wanna rock and roll all night and party every day\nI wanna rock and roll all night and party every day\nI wanna rock and roll all night and party every day\nI wanna rock and roll all night and party every day\n\n\n… You keep on saying you'll be mine for a while\nYou're lookin' fancy and I like your style\nYou drive us wild, we'll drive you crazy\nYou show us everything you've got\nBaby, baby that's quite a lot\nAnd you drive us wild, we'll drive you crazy\nYou keep on shoutin', you keep on shoutin'\n\n\n… I wanna rock and roll all night and party every day\nI wanna rock and roll all night and party every day\nI wanna rock and roll all night and party every day\nI wanna rock and roll all night and party every day\nI wanna rock and roll all night and party every day\nI wanna rock and roll all night and party every day\nI wanna rock and roll all night and party every day\nI wanna rock and roll all night and party every day"},{"id":"song-035","title":"White Wedding","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Hey little sister, what have you done?\nHey little sister, who's the only one?\nHey little sister, who's your Superman?\nHey little sister, who's the one you want?\nHey little sister, shotgun\n\nIt's a nice day to start again\nIt's a nice day for a white wedding\nIt's a nice day to start again\n\nHey little sister, who is it you're with?\nHey little sister, what's your vice or wish?\nHey little sister, shotgun, oh yeah\nHey little sister, who's your Superman?\nHey little sister, shotgun\n\nIt's a nice day to start again\nIt's a nice day for a white wedding\nIt's a nice day to start again\n\nPick it up\nTake me back home, yeah\n\nHey little sister, what have you done?\nHey little sister, who's the only one?\nI've been away for so long\nI've been away for so long\nI let you go for so long\n\nIt's a nice day to start again\nIt's a nice day for a white wedding\nIt's a nice day to start again\n\nThere is nothin' fair in this world, girl\nThere is nothin' safe in this world\nAnd there's nothin' sure in this world\nAnd there's nothin' pure in this world\nLook for something left in this world\nStart again\n\nIt's a nice day to start again\nIt's a nice day for a white wedding\nIt's a nice day to start again"},{"id":"song-036","title":"Crazy Train","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"All aboard ha ha ha ha ha ha ha\n\n\nAy, ay, ay, ay, ay, ay, ay\n\n\nCrazy, but that's how it goes\nMillions of people living as foes\nMaybe it's not too late\nTo learn how to love\nAnd forget how to hate\n\n\nMental wounds not healing\nLife's a bitter shame\nI'm going off the rails on a crazy train\nI'm going off the rails on a crazy train\n\n\nLet's go\n\n\nI've listened to preachers\nI've listened to fools\nI've watched all the dropouts\nWho make their own rules\n\n\nOne person conditioned to rule and control\nThe media sells it and you live the role\n\n\nMental wounds still screaming\nDriving me insane\nI'm going off the rails on a crazy train\nI'm going off the rails on a crazy train\n\n\nI know that things are going wrong for me\nYou gotta listen to my words, yeah\n\n\nHeirs of a cold war\nThat's what we've become\nInheriting troubles I'm mentally numb\nCrazy, I just cannot bear\nI'm living with something' that just isn't fair\n\n\nMental wounds not healing\nWho and what's to blame\nI'm going off the rails on a crazy train\nI'm going off the rails on a crazy train"},{"id":"song-037","title":"Jessie’s Girl","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Verse 1]\nJessie is a friend\nYeah, I know, he's been a good friend of mine\nBut lately something's changed that ain't hard to define\nJessie's got himself a girl, and I wanna make her mine\n\n\n[Pre-Chorus]\nAnd she's watching him with those eyes\nAnd she's lovin' him with that body\nI just know it\nAnd he's holding her in his arms late, late at night\n\n\n[Chorus]\nYou know I wish that I had Jessie's girl\nI wish that I had Jessie's girl\nWhere can I find a woman like that?\n\n\n[Verse 2]\nI'll play along with this charade\nThat doesn't seem to be a reason to change\nYou know I feel so dirty when they start talking cute\nI wanna tell her that I love her, but the point is probably moot\n\n\n[Pre-Chorus]\n'Cause she's watching him with those eyes\nAnd she's lovin' him with that body\nI just know it\nAnd he's holding her in his arms late, late at night"},{"id":"song-038","title":"Jump","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"I get up and nothin' gets me down, You got it tough, I've seen the toughest around\nAnd I know, baby, just how you feel, You got to roll with the punches to get to what's real\n\n\n* Ah, can't you see me standin' here? I've got my back against the record machine\nI ain't the worst that you've seen, Ah, can't you see what I mean?\n\n\nAh, might as well jump (jump), Might as well jump\nGo ahead and jump (jump), Go ahead and jump\n\n\nHello, hey you, Who said that?\nBaby, how you been? \nYou say you don't know, You won't know until you begin\n\n\n* So can't you see me standing here? I've got my back against the record machine\nI ain't the worst that you've seen, Ah, can't you see what I mean?\n\n\nAh, might as well jump (jump), Go ahead and jump\nMight as well jump (jump), Go ahead and jump\nJump\n\n\n—- Instrumental —-\n\n\nMight as well jump (jump), Go ahead and jump\nGet it and jump (jump), Go ahead and jump\n\n\nJump - Jump - Jump - Jump"},{"id":"song-039","title":"Don’t Ask Me No Questions","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Well, every time that I come home, nobody wants to let me be\nSeems that all the friends I've got just got to come interrogate me\nWell, I appreciate your feelings and I don't want to pass you by\nBut I don't ask you about your business, don't ask me about mine, yeah\n\n\n[Interlude] Horns\n\n\nWell, it's true, I love the money\nAnd I love my brand-new car\nI like drinking the best of whiskey - Horns\nPlayin' in a honkeytonk bar - Horns\n\n\nWhen I come off the road - Horns\nWell, I just gotta have my time - Horns\n'Cause I got to find a break in this action\nOr else I'm gonna lose my mind\n\n\nSo don't ask me no questions\nAnd I won't tell you no lies - deep B Sax\nSo don't ask me about my business\nAnd I won't tell you goodbye (that's right)\n\n\n[Interlude] - Piano extended (4 times)\n\n\nWell, what's your favorite color\nAnd do you dig the brothers\nIt's driving me up the wall - Horns light\nAnd every time I think I can sleep\nSome fool has got to call - Horns light\nWell, don't you think that when I come home\nI just want a little piece of mind - Horns light\nAnd if you wanna talk about this business\nBuddy, you just wasting time - low octave piano\n\n\nSo don't ask me no questions\nAnd I won't tell you no lies - low octave Horns\nSo don't ask me about my business\nAnd I won't tell you good-bye - low octave Horns\nI said, \"Don't ask no stupid questions\nAnd I won't send you away\" - low octave Horns\nIf you want to talk fishin'\nI guess that would be okay - low octave Horns\n(Woo!)\n\n\nPiano exit jazzy"},{"id":"song-040","title":"Funk #49","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"I sleep all day, out all night\nI know where you're goin'\nI don't think that's actin' right\nYou don't think it's showin'\n\nA jumpin' up, fallin' down\nDon't misunderstand me\nYou don't think that I know your plan\nWhat you tryin' to hand me?\n\nOut all night, sleep all day\nI know what you're doin'\nIf you're gonna act that way\nI think there's trouble brewin'"},{"id":"song-041","title":"All Right Now","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"There she stood in the street\nSmiling from her head to her feet\nI said hey, what is this\nNow baby, maybe she's in need of a kiss\nI said hey, what's your name baby\nMaybe we can see things the same\nNow don't you wait or hesitate\nLet's move before they raise the parking rate\n\nAll right now baby, it's all right now\nAll right now baby, it's all right now\n\nI took her home to my place\nWatching every move on her face\nShe said look, what's your game baby\nAre you tryin' to put me in shame\nI said slow don't go so fast\nDon't you think that love can last\nShe said love, Lord above\nNow you're tryin' to trick me in love\n\nAll right now baby, it's all right now\nAll right now baby, it's all right now\n\nAll right now baby, it's all right now\nAll right now baby, it's all right now\n\nAll right now baby, it's all right now\nAll right now baby, it's all right now\n\nAll right now baby, it's all right now\nAll right now baby, it's all right now"},{"id":"song-042","title":"Paranoid","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Finished with my woman\n'Cause she couldn't help me with my mind\nPeople think I'm insane\nBecause I am frowning all the time (come on out)\n\n\nAll day long I think of things\nBut nothing seems to satisfy\nThink I'll lose my mind\nIf I don't find something to pacify\n\n\nCan you help me?\nOccupy my brain\nOh, yeah (let me see your hands)\n\n\nI need someone to show me\nThe things in life that I can't find\nI can't see the things that make true happiness\nI must be blind\n\n\nAlright, let me hear you, come on\nAlright, show it then, come on\nLouder, come on\nYou ain't fucking loud enough, come on\nCome on\nNow I've heard\n\n\nLouder, come on, put your fucking balls into it\n\n\nAlright\n\n\nMake a joke and I will sigh\nAnd you will laugh and I will cry\nHappiness I cannot feel\nAnd love to me is so unreal\n\n\nAnd so as you hear these words\nTelling you now of my state\nI tell you to enjoy life\nI wish I could, but it's too late\n\n\nThank you, good night\nYou are the fuckin' coolest, man\nI love you all\nWe love you, good night, God bless you"},{"id":"song-043","title":"ROCK in the USA","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Verse 1]\nThey come from the cities and they come from the smaller towns\nBeat up cars with guitars and drummers going crack, boom, bam\n\n\n[Chorus]\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A., yeah, yeah\nRocking in the U.S.A\n\n\n[Verse 2]\nWell, they said goodbye to their families, said goodbye to their friends\nWith pipe dreams in their heads and very little money in their hands\nSome are black and some are white\nThey ain't too proud to sleep on your floor tonight\nWith the blind faith of Jesus, you know that they just might\nRocking in the U.S.A\nHey\n\n\n[Verse 3]\nVoices from nowhere and voices from the larger town\nFilled our head full of dreams and turned our world upside down\nAnd there was Frankie Lymon, Bobby Fuller, Mitch Ryder\n(They were rocking)\nJackie Wilson, Shangri-las, Young Rascals\n(They were rocking)\nSpotlight on Martha Reeves, let's don't forget James Brown\n\n\n[Chorus]\nRocking in the U.S.A\nHey\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A"},{"id":"song-044","title":"What I Like About You","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Intro]\nHey\nUh huh huh\nHey\nUh huh huh\n\n\n[Verse 1]\nWhat I like about you\nYou hold me tight\nTell me I'm the only one\nYou wanna come over tonight, yeah\n\n\n[Hook]\nKeep on whispering in my ear\nTell me all the things that I wanna hear\nCause it's true\nThat's what I like about you\n\n\n[Verse 2]\nWhat I like about you\nYou really know how to dance\nWhen you go up, down, jump around\nThink about true romance, yeah\n\n\n[Hook]\nKeep on whispering in my ear\nTell me all the things that I wanna hear\nCause it's true\nThat's what I like about you\nThat's what I like about you\nThat's what I like about you\nWow\n\n\nHey\n\n\n[Verse 3]\nWhat I like about you\nYou keep me warm at night\nNever wanna let you go\nKnow you make me feel alright, yeah\n\n\n[Hook]\nKeep on whispering in my ear\nTell me all the things that I wanna hear\n'Cause it's true\nThat's what I like about you\nThat's what I like about you\nThat's what I like about you\nThat's what I like about you\nThat's what I like about you\nThat's what I like about you\nThat's what I like about you\n\n\n[Outro]\nHey\nUh huh huh\nHey, hey, hey, hey\nUh huh huh, brrr\nHey\nUh huh huh\nHey"},{"id":"song-045","title":"Come Together - Aerosmith","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Here come old flat top\nHe come groovin' up slowly\nHe got Joo Joo eyeball\nHe one holy roller\nHe got hair down to his knee\nGot to be a joker, he just do what he please\n\n\nHe wear no shoeshine\nHe got toe jam football\nHe got monkey finger\nHe shoot Coca Cola\nHe say I know you, you know me\nOne thing I can tell you is you got to be free\n\n\nCome together\nRight now\nOver me\n\n\nHe bad production\nHe got walrus gumboot\nHe got Ono sideboard\nHe one spinal cracker\nHe got feet down below his knee\nHold you in his armchair, you can feel his disease\n\n\nCome together\nRight now\nOver me"},{"id":"song-046","title":"Live and Let Die - Guns n Roses","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Pre-Chorus]\nWhen you were young, and your heart was an open book\nYou used to say, \"Live and let live\"\n(You know you did, you know you did, you know you did)\nBut if this ever-changing world in which we live in\nMakes you give in and cry\n\n\n[Chorus]\nSay, \"Live and let die\"\nLive and let die\n\n\n[Instrumental Break]\n\n\n[Verse]\nWhat does it matter to ya?\nWhen you got a job to do\nYou got to do it well\nYou got to give the other fella hell\n\n\n[Guitar Solo]\n\n\n[Pre-Chorus]\nYou used to say, \"Live and let live\"\n(You know you did, you know you did, you know you did)\nBut if this ever-changing world in which we live in\nMakes you give in and cry"},{"id":"song-047","title":"Come Sail Away","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"I'm sailing away\nSet an open course for the Virgin Sea\n'Cause I've got to be free\nFree to face the life that's ahead of me\n\n\nOn board, I'm the captain\nSo climb aboard\nWe'll search for tomorrow\nOn every shore\nAnd I'll try, oh Lord, I'll try\nTo carry on\n\n\nI look to the sea\nReflections in the waves, spark my memory\nSome happy, some sad\nI think of childhood friends and the dreams we had\n\n\nWe lived happily forever\nSo the story goes\nBut somehow we missed out\nOn the pot of gold\nBut we'll try, best that we can\nTo carry on\n\n\nA gathering of angels\nAppeared above my head\nThey sang to me this song of hope\nAnd this is what they said\n\n\nThey said come sail away, come sail away\nCome sail away with me, lads\nCome sail away, come sail away\nCome sail away with me\nCome sail away, come sail away\nCome sail away with me, baby\nCome sail away, come sail away\nCome sail away with me\n\n\nI thought that they were angels\nBut to my surprise\nWe climbed aboard their starship\nWe headed for the skies\n\n\nSinging \"Come sail away, come sail away\nCome sail away with me, lads\nCome sail away, come sail away\nCome sail away with me\nCome sail away, come sail away\nCome sail away with me\nCome sail away, come sail away\nCome sail away with me\n\n\nCome sail away, come sail away\nCome sail away with me\"\nCome sail away, come sail away\nCome sail away with me\nCome sail away, come sail away\nCome sail away with me\nCome sail away, come sail away\nCome sail away with me\n\n\nCome sail away, come sail away\nCome sail away with me"},{"id":"song-048","title":"Sweet Emotion","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Sweet emotion\nSweet emotion\n\n\nYou talk about things that nobody cares\nWearing out things that nobody wears\nYou're calling my name but I gotta make clear\nI can't say, baby, where I'll be in a year\n\n\nSome sweat hog mama with a face like a gent\nSaid my get up and go, must've got up and went\nWell I got good news, she's a real good liar\n'Cause the backstage boogie sets your pants on fire\n\n\nSweet emotion\nSweet emotion\n\n\nI pulled into town in a police car\nYour daddy said I took it just a little too far\nYou're telling her things but your girlfriend lied\nYou can't catch me 'cause the rabbit done died\nYes it did\n\n\nStand in the front just a shakin' your ass\nI'll take you backstage, you can drink from my glass\nI'll talk about something you can sure understand\n'Cause a month on the road and I'll be eating from your hand"},{"id":"song-049","title":"Long Train Runnin’","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Down around the corner\nHalf a mile from here\nYou see them long trains runnin'\nAnd you watch them disappear\n\n\nWithout love\nWhere would you be now?\nWithout love\n\n\nYou know I saw Miss Lucy\nDown along the tracks\nShe lost her home and her family\nAnd she won't be coming back\n\n\nWithout love\nWhere would you be right now?\nWithout love\n\n\nWell, the Illinois central\nAnd the Southern Central Freight\nGot to keep on pushin', mama\nYou know they're runnin' late\n\n\nWithout love\nWhere would you be now-na-na-now?\nWithout love\n\n\nWell, the Illinois Central\nAnd the Southern Central Freight\nGot to keep on pushin' mama\n'Cause you know they're runnin' late\n\n\nWithout love\nWhere would you be now?\nWithout love\n\n\nWell, pistons keep on churnin'\nAnd the wheels go 'round and 'round\nAnd the steel rails are cold and hard\nOn the mountains they go down\n\n\nWithout love\nWhere would you be right now?\nWithout love\nOoh, where would you be now?\n\n\nMmm, got to get you, baby, baby, won't you move it down?\nWon't you move it down?\nBaby, baby, baby, baby, won't you move it down?\nWhen the big train run\nWhen the train is movin' on\nI got to keep on movin'\nKeep on movin'\nWon't you keep on movin'?\nGonna keep on movin'"},{"id":"song-050","title":"Creep","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Verse 1]\nWhen you were here before, couldn't look you in the eye\nYou're just like an angel, your skin makes me cry\nYou float like a feather in a beautiful world\nI wish I was special, you're so fuckin' special\n\n\n[Chorus]\nBut I'm a creep, I'm a weirdo\nWhat the hell am I doin' here?\nI don't belong here\n\n\n[Verse 2]\nI don't care if it hurts, I wanna have control\nI want a perfect body, I want a perfect soul\nI want you to notice when I'm not around\nYou're so fuckin' special, I wish I was special\n\n\n[Chorus]\nBut I'm a creep, I'm a weirdo\nWhat the hell am I doin' here?\nI don't belong here\nOh-oh, oh-oh\n\n\n[Bridge]\nShe's runnin' out the door\nShe's runnin' out\nShe run, run, run, run\nRun\n\n\n[Outro]\nWhatever makes you happy, whatever you want\nYou're so fuckin' special, I wish I was special\nBut I'm a creep, I'm a weirdo\nWhat the hell am I doin' here?\nI don't belong here\nI don't belong here"},{"id":"song-051","title":"Home Sweet Home","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"You know I'm a dreamer\nBut my heart's of gold\nI had to run away high\nSo I wouldn't come home low\nJust when things went right\nIt doesn't mean they were always wrong\nJust take this song and you'll never feel\nLeft all alone\nTake me to your heart\nFeel me in your bones\nJust one more night\nAnd I'm coming off this\nLong and winding road\n\n\nI'm on my way\nI'm on my way\nHome sweet home\nTonight, tonight\nI'm on my way\nI'm on my way\nHome sweet home\n\n\nYou know that I've seen\nToo many romantic dreams\nUp in lights\nFalling off the silver screen\nMy heart's like an open book\nFor the whole world to read\nSometimes nothing\nKeeps me together\nAt the seams\n\n\nI'm on my way\nI'm on my way\nHome sweet home\nTonight, tonight\nI'm on my way\nJust set me free\nHome sweet home\nHome sweet home\nHome sweet home\nHome sweet home\n\n\nI'm on my way\nI'm on my way\nHome sweet home, yeah\nI'm on my way\nJust set me free\nHome sweet home"},{"id":"song-052","title":"Live and Let Die","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"You were young and your heart was an open book\nYou used to say, \"Live and let live\"\n(You know you did, you know you did, you know you did)\nBut if this ever changin' world in which we live in\nMakes you give in and cry\n\n\nSay, \"Live and let die\nLive and let die\"\n\n\nWhat did it matter to you\nWhen you got a job to do?\nYou got to do it well\nYou got to give the other fella hell\n\n\nYou used to say, \"Live and let live\"\n(You know you did, you know you did, you know you did)\nBut if this ever changin' world in which we live in\nMakes you give in and cry\n\n\nSay, \"Live and let die\nLive and let die\""},{"id":"song-053","title":"Wanted Dead Or Alive","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"It's all the same, only the names will change\nEvery day it seems we're wasting away\nAnother place where the faces are so cold\nI'd drive all night just to get back home\n\nI'm a cowboy\nOn a steel horse I ride\nI'm wanted dead or alive\nWanted dead or alive\n\nSometimes I sleep, sometimes it's not for days\nThe people I meet always go their separate ways\nSometimes you tell the day by the bottle that you drink\nAnd times when you're alone, well, all you do is think\n\nI'm a cowboy\nOn a steel horse I ride\nI'm wanted (Wanted) dead or alive\nWanted (Wanted) dead or alive\n\nOh, and I ride\n\nOoh, I'm a cowboy\nOn a steel horse I ride\nI'm wanted (Wanted) dead or alive\n\nBut I walk these streets, a loaded six-string on my back\nI play for keeps 'cause I might not make it back\nI've been everywhere, (Oh yeah) still I'm standing tall\nI've seen a million faces and I've rocked them all\n\n'Cause I'm a cowboy\nOn a steel horse, I ride\nI'm wanted (Wanted) dead or alive\nAnd I'm a cowboy\nI got the night on my side\nAnd I'm wanted (Wanted) dead or alive\n\nAnd I ride (And I ride), dead or alive\nI still drive (Still drive), dead or alive\nDead or alive\nDead or alive\nDead or alive\nDead or alive"},{"id":"song-054","title":"Mama, I'm Coming Home","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Times have changed and times are strange\nHere I come, but I ain't the same\nMama, I'm coming home\n\n\nTime's gone by, it seems to be\nYou could have been a better friend to me\nMama, I'm coming home\n\n\nYou took me in and you drove me out\nYeah, you had me hypnotized, yeah\nLost and found and turned around\nBy the fire in your eyes\n\n\nYou made me cry, you told me lies\nBut I can't stand to say goodbye\nMama, I'm coming home\n\n\nI could be right, I could be wrong\nIt hurts so bad, it's been so long\nMama, I'm coming home\n\n\nSelfish love, yeah, we're both alone\nThe ride before the fall, yeah\nBut I'm gonna take this heart of stone\nI've just got to have it all\n\n\nI've seen your face a hundred times\nEvery day we've been apart\nI don't care about the sunshine, yeah\n'Cause, mama, mama, I'm coming home\nI'm coming home\n\n\nYou took me in and you drove me out\nYeah, you had me hypnotised, yeah\nLost and found and turned around\nBy the fire in your eyes\n\n\nI've seen your face a thousand times\nEvery day we've been apart\nAnd I don't care about the sunshine, yeah\n'Cause, mama, mama, I'm coming home\nI'm coming home\nI'm coming home\nI'm coming home"},{"id":"song-055","title":"Bad Case Of Loving You (Doctor, Doctor)","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"A hot summer night fell like a net\nI've gotta find my baby yet\nI need you to soothe my head\nTurn my blue heart to red\n\n\nDoctor Doctor, gimme the news I got a\nBad case of loving you\nNo pill's gonna cure my ill I've got a\nBad case of loving you\n\n\nA pretty face don't make no pretty heart\nI learned that buddy from the start\nYou think I'm cute, a little bit shy\nMama, I ain't that kind of guy\n\n\nDoctor Doctor, gimme the news I got a\nBad case of loving you\nNo pill's gonna cure my ill I got a\nBad case of loving you\n\n\nI know you like it, you like it on top\nTell me mama, are you gonna stop?\n\n\nYou had me down twenty-one to zip\nSmile of Judas on your lip\nShake my fist, knock on wood\nI've got it bad, and I got it good\n\n\nDoctor Doctor, gimme the news I've got a\nBad case of loving you\nNo pill's gonna cure my ill I got a\nBad case of loving you"},{"id":"song-056","title":"Even Flow","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Freezing\nRests his head on a pillow made of concrete, again\nOh, feeling\nMaybe he'll see a little better, set of days, ooh yeah\nOh, hand out\nFaces that he sees time again ain't that familiar, oh yeah\nOh, dark grin\nHe can't help, when he's happy he looks insane, hm yeah\n\n\nEven flow, thoughts arrive like butterflies\nOh, he don't know, so he chases them away\nOh, someday yet, he'll begin his life again\nLife again, life again\n\n\nKneeling\nLooking through the paper though he doesn't know to read, oh yeah\nOh, praying\nNow to something that has never showed him anything\nOh, feeling\nUnderstands the weather of the winters on its way\nOh, ceilings\nFew and far between all the legal halls of shame, hey\n\n\nEven flow, thoughts arrive like butterflies\nOh, he don't know, so he chases them away\nOh, someday yet, he'll begin his life again\n...Ah, whispering hands, gently lead him away\nHim away, him away\n\n\nYeah!\nWoo, ah yeah... fuck it up\n\n\nHey man, you got a dollar?\nCome on, just some spare change, man, I know you got\nWell, God bless you, man, God bless you\n\n\nEven flow, thoughts arrive like butterflies\nOh, he don't know, so he chases them away\nOh, someday yet, he'll begin his life again\nOh, whispering hands, gently lead him away\nHim away, him away... yeah!\nWoo, ah yeah"},{"id":"song-057","title":"Rockstar","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"I'm through with standing in line to clubs I'll never get in\nIt's like the bottom of the ninth and I'm never gonna win\nThis life hasn't turned out quite the way I want it to be\n(Tell me what you want)\nI want a brand new house on an episode of Cribs\nAnd a bathroom I can play baseball in\nAnd a king size tub big enough for ten plus me\n(Ah, so what you need?)\nI'll need a, a credit card that's got no limit\nAnd a big black jet with a bedroom in it\nGonna join the mile high club at thirty-seven thousand feet\n(Been there, done that)\nI want a new tour bus full of old guitars\nMy own star on Hollywood Boulevard\nSomewhere between Cher and James Dean is fine for me\n(So how you gonna do it?)\nI'm gonna trade this life for fortune and fame\nI'd even cut my hair and change my name\n\n\n'Cause we all just wanna be big rockstars\nAnd live in hilltop houses driving fifteen cars\nThe girls come easy and the drugs come cheap\nWe'll all stay skinny 'cause we just won't eat\nAnd we'll hang out in the coolest bars\nIn the VIP with the movie stars\nEvery good gold digger's gonna wind up there\nEvery Playboy bunny with her bleach blond hair, and we'll\nHey, hey, I wanna be a rockstar, oh\nHey, hey, I wanna be a rockstar\n\n\nI wanna be great like Elvis without the tassels\nHire eight bodyguards that love to beat up assholes\nSign a couple autographs so I can eat my meals for free\n(I'll have the quesadilla, ha-ha)\nI'm gonna dress my ass with the latest fashion\nGet a front door key to the Playboy mansion\nGonna date a centerfold that loves to blow my money for me\n(So how you gonna do it?)\nI'm gonna trade this life for fortune and fame\nI'd even cut my hair and change my name\n\n\n'Cause we all just wanna be big rockstars\nAnd live in hilltop houses driving fifteen cars\nThe girls come easy and the drugs come cheap\nWe'll all stay skinny 'cause we just won't eat\nAnd we'll hang out in the coolest bars\nIn the VIP with the movie stars\nEvery good gold digger's gonna wind up there\nEvery Playboy bunny with her bleach blond hair, and we'll\nAnd we'll hide out in the private rooms\nWith the latest dictionary of today's who's who\nThey'll get you anything with that evil smile\nEverybody's got a drug dealer on speed dial, well\nHey, hey, I wanna be a rockstar\n\n\nI'm gonna sing those songs that offend the censors\nGonna pop my pills from a Pez dispenser\nGet washed-up singers writing all my songs\nLip sync 'em every night so I don't get 'em wrong\n\n\nWell, we all just wanna be big rockstars\nAnd live in hilltop houses driving fifteen cars\nThe girls come easy and the drugs come cheap\nWe'll all stay skinny 'cause we just won't eat\nAnd we'll hang out in the coolest bars\nIn the VIP with the movie stars\nEvery good gold digger's gonna wind up there\nEvery Playboy bunny with her bleach blond hair\nAnd we'll hide out in the private rooms\nWith the latest dictionary of today's who's who\nThey'll get you anything with that evil smile\nEverybody's got a drug dealer on speed dial, well\nHey, hey, I wanna be a rockstar, oh\nHey, hey, I wanna be a rockstar"},{"id":"song-058","title":"Jack & Diane","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Little ditty about Jack and Diane\nTwo American kids growin' up in the heartland\nJackie gonna be a football star\nDiane's debutante backseat of Jackie's car\n\n\nSuckin' on a chili dog\nOutside the Tastee Freez\nDiane's sittin' on Jackie's lap\nHe's got his hand between her knees\nJackie say, hey, Diane\nLet's run off behind a shady trees\nDribble off those Bobby Brooks\nLet me do what I please\nSay a\n\n\nOh yeah, life goes on\nLong after the thrill of livin' is gone\nSay a\nOh yeah, life goes on\nLong after the thrill of livin' is gone\nThey walk on\n\n\nJackie sits back\nCollects his thoughts for a moment\nScratches his head\nAnd does his best James Dean\nWell you know, Diane\nWe oughta run off to the city\nDiane says, baby\nYou ain't missin' nuth-in\nJackie, say-a\n\n\nOh yeah, life goes on\nLong after the thrill of livin' is gone\nOh yeah, I say, life goes on\nLong after the thrill of livin' is gone\n\n\nGonna let it rock\nLet it roll\nLet the Bible Belt come\nAnd save my soul\nHoldin' on to sixteen as long as you can\nChanges come around real soon\nMake us women and men\n\n\nOh yeah, life goes on\nLong after the thrill of livin' is gone\nOh yeah, I say, life goes on\nLong after the thrill of livin' is gone\n\n\nLittle ditty about Jack and Diane\nTwo American kids doin' the best they can"},{"id":"song-059","title":"How You Remind Me","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Never made it as a wise man\nI couldn't cut it as a poor man stealing\nTired of livin' like a blind man\nI'm sick of sight without a sense of feeling\nAnd this is how you remind me\n\n\nThis is how you remind me of what I really am\nThis is how you remind me of what I really am\n\n\nIt's not like you to say sorry\nI was waitin' on a different story\nThis time I'm mistaken\nFor handing you a heart worth breakin'\nAnd I've been wrong, I've been down\nBeen to the bottom of every bottle\nThese five words in my head\nScream, \"Are we havin' fun yet?\"\n\n\nYet, yet, yet, no, no\nYet, yet, yet, no, no\n\n\nIt's not like you didn't know that\nI said, \"I love you,\" and I swear I still do\nAnd it must have been so bad\n'Cause livin' with me must have damn near killed you\n\n\nAnd this is how you remind me of what I really am\nThis is how you remind me of what I really am\n\n\nIt's not like you to say sorry\nI was waitin' on a different story\nThis time I'm mistaken\nFor handing you a heart worth breakin'\nAnd I've been wrong, I've been down\nBeen to the bottom of every bottle\nThese five words in my head\nScream, \"Are we havin' fun yet?\"\n\n\nYet, yet, yet, no, no\nYet, yet, yet, no, no\nYet, yet, yet, no, no\nYet, yet, yet, no, no\n\n\nNever made it as a wise man\nI couldn't cut it as a poor man stealin'\nAnd this is how you remind me\nThis is how you remind me\n\n\nThis is how you remind me of what I really am\nThis is how you remind me of what I really am\n\n\nIt's not like you to say sorry\nI was waitin' on a different story\nThis time I'm mistaken\nFor handing you a heart worth breakin'\nAnd I've been wrong, I've been down\nBeen to the bottom of every bottle\nThese five words in my head\nScream, \"Are we havin' fun yet?\"\n\n\nYet, yet, are we havin' fun yet?\nYet, yet, are we havin' fun yet?\nYeah, yeah (These five words in my head scream)\nAre we havin' fun yet?\nYeah, yeah (These five words in my head)\nNo, no"},{"id":"song-060","title":"Self Esteem","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"La, la, la-la-la\nLa, la, la-la-la\n\n\nI wrote her off for the tenth time today\nAnd practiced all the things I would say\nBut she came over, I lost my nerve\nI took her back and made her dessert\n\n\nOh, I know I'm being used\nThat's okay, man, 'cause I like the abuse\nI know she's playing with me\nThat's okay 'cause I've got no self-esteem\n\n\nOh, way, oh yeah, yeah\nOh yeah, yeah\nOh yeah, yeah\nOh yeah, yeah\n\n\nWe make plans to go out at night\nI wait 'til two, then I turn out the light\nThis rejection's got me so low\nIf she keeps it up, I just might tell her so\n\n\nOh, way, oh yeah, yeah\nOh yeah, yeah\nOh yeah, yeah\nOh yeah, yeah\n\n\nWhen she's saying, oh, that she wants only me\nThen I wonder why she sleeps with my friends\nWhen she's saying, oh, that I'm like a disease\nThen I wonder how much more I can spend\nWell, I guess I should stick up for myself\nBut I really think it's better this way\nThe more you suffer\nThe more it shows you really care\nRight? Yeah\n\n\nNow I'll relate this little bit\nIt happens more than I'd like to admit\nLate at night, she knocks on my door\nShe's drunk again and looking to score\n\n\nOh, I know I should say no\nBut it's kind of hard when she's ready to go\nI may be dumb, but I'm not a dweeb\nI'm just a sucker with no self-esteem\n\n\nOh, way, oh yeah, yeah\nOh yeah, yeah\nOh yeah, yeah\nOh yeah, yeah\n\n\nWhen she's saying, oh, that she wants only me\nThen I wonder why she sleeps with my friends\nWhen she's saying, oh, that I'm like a disease\nThen I wonder how much more I can spend\nWell, I guess I should stick up for myself\nBut I really think it's better this way\nThe more you suffer\nThe more it shows you really care\nRight? Yeah"},{"id":"song-061","title":"December","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Why drink the water from my hand\nContagious as you think I am\nJust tilt my sun towards your domain\nYour cup runneth over again\n\n\nDon't scream about, don't think aloud\nTurn your head, now, baby, just spit me out\nDon't worry 'bout, don't speak of doubt\nTurn your head, now, baby, just spit me out\n\n\nOooh, oooh, oooh // 2x\n\n\nWhy follow me to higher ground\nLost as you swear I am\nDon't throw away your basic needs\nAmbiance and vanity\n\n\nDon't scream about, don't think aloud\nTurn your head, now, baby, just spit me out\nDon't worry 'bout, don't speak of doubt\nTurn your head, now, baby, just spit me out\n(Oooh) Don't scream about, don't think aloud\nTurn your head, now, baby, just spit me out\n(Oooh) Don't worry 'bout, don't speak of doubt\nTurn your head, now, baby, just spit me out\n\n\nOooh, oooh, oooh // 2x\n\n\nDecember promise you gave unto me\nDecember whispers of treachery\nDecember clouds are now covering me\nDecember songs no longer I sing\nDecember promise you gave unto me\nDecember whispers of treachery\nDecember clouds are now covering me\nDecember songs no longer I sing\n\n\n(December promise you gave unto me)\nDon't scream about, don't think aloud\n(December whispers of treachery)\nTurn your head, now, baby, just spit me out\n(December clouds are now covering me)\nDon't worry 'bout, don't speak of doubt\n(December songs no longer I sing)\nTurn your head, now, baby, just spit me out\n\n\n(December promise you gave unto me)\nDon't scream about, don't think aloud\n(December whispers of treachery)\nTurn your head, now, baby, just spit me out\n(December clouds are now covering me)\nDon't worry 'bout, don't speak of doubt\n(December songs no longer I sing)\nTurn your head, now, baby, just spit me out"},{"id":"song-062","title":"The World I Know","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Has our conscience shown?\nHas the sweet breeze blown?\nHas all kindness gone?\nHope still lingers on\n\n\nI drink myself of new-found pity\nSitting alone in New York City\nAnd I don't know why\n\n\nAre we listening?\nHymns of offering?\nHave we eyes to see\nLove is gathering?\n\n\nAll the words that I've been reading\nHave now started the act of bleeding\nInto one, into one\n\n\nSo I walk up on high\nAnd I step to the edge\nTo see my world below\nAnd I laugh at myself\nWhile the tears roll down\n'Cause it's the world I know\nOh. It's the world I know\n\n\nI drink myself of new-found pity\nSitting alone in New York City\nAnd I don't know why\nDon't know why\n\n\nSo I walk up on high\nAnd I step to the edge\nTo see my world below\nAnd I laugh at myself\nWhile the tears roll down\n'Cause it's the world I know\nOh. It's the world I know\n\n\nYeah, I walk up on high\nAnd I step to the edge\nTo see my world below\nAnd I laugh at myself\nWhile the tears roll down\n'Cause it's the world I know\nOh. It's the world I know"},{"id":"song-063","title":"Fat Bottomed Girls","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Oh you gonna take me home tonight\nOh down beside that red firelight\nOh you gonna let it all hang out\nFat-bottomed girls, you make the rocking world go 'round\n\n\nHey, I was just a skinny lad\nNever knew no good from bad\nBut I knew life before I left my nursery (huh)\nLeft alone with big fat Fanny\nShe was such a naughty nanny\nHeap big woman, you made a bad boy out of me\n\n\nHey, hey!\n\n\nI've been singing with my band\n'Cross the water, 'cross the land\nI've seen every blue-eyed floozy on the way (hey)\nBut their beauty and their style\nWent kind of smooth after a while\nTake me to them dirty ladies every time\n\n\nC'mon!\n\n\nOh, won't you take me home tonight?\nOh, down beside your red firelight\nOh, and you give it all you got\nFat-bottomed girls, you make the rocking world go 'round\nFat-bottomed girls, you make the rocking world go 'round\n\n\nHey, listen here\nNow I got mortgages and homes\nI got stiffness in the bones\nAin't no beauty queens in this locality (I tell you)\nOh, but I still get my pleasure\nStill got my greatest treasure\nHeap big woman you done made a big man of me (now get this)\n\n\nOh (I know), you gonna take me home tonight (please)\nOh, down beside that red firelight\nOh, you gonna let it all hang out\nFat-bottomed girls, you make the rocking world go 'round (yeah)\nFat-bottomed girls, you make the rocking world go 'round\n\n\nGet on your bikes and ride\n\n\nOoh, yeah, oh, yeah, them fat-bottomed girls\nFat-bottomed girls, yeah, yeah, yeah\nAlright\nRide 'em come on\nFat-bottomed girls\nYes, yes, right"},{"id":"song-064","title":"Livin' On A Prayer","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Once upon a time, not so long ago\n\n\nTommy used to work on the docks\nUnion's been on strike, he's down on his luck\nIt's tough\nSo tough\nGina works the diner all day\nWorking for her man, she brings home her pay\nFor love\nMm, for love\n\n\nShe says, \"We've gotta hold on to what we've got\nIt doesn't make a difference if we make it or not\nWe've got each other and that's a lot for love\nWe'll give it a shot\"\n\n\nWhoa, we're halfway there\nWhoa-oh, living on a prayer\nTake my hand, we'll make it, I swear\nWhoa-oh, living on a prayer\n\n\nTommy's got his six-string in hock\nNow he's holding in, when he used to make it talk\nSo tough\nOoh, it's tough\nGina dreams of running away\nWhen she cries in the night, Tommy whispers\n\"Baby, it's okay\nSomeday\"\n\n\nWe've gotta hold on to what we've got\nIt doesn't make a difference if we make it or not\nWe've got each other and that's a lot for love\nWe'll give it a shot\n\n\nWhoa, we're halfway there\nWhoa-oh, living on a prayer\nTake my hand, we'll make it I swear\nWhoa-oh, living on a prayer, living on a prayer\n\n\nOoh, we gotta hold on, ready or not\nYou live for the fight when that's all that you've got\n\n\nWhoa, we're halfway there\nWhoa-oh, living on a prayer\nTake my hand and we'll make it, I swear\nWhoa-oh, living on a prayer\n\n\nWhoa, we're halfway there\nWhoa-oh, living on a prayer\nTake my hand and we'll make it, I swear\nWhoa-oh, living on a prayer\n\n\nWhoa, we're halfway there\nWhoa-oh, living on a prayer\nTake my hand and we'll make it, I swear\nWhoa-oh, living on a prayer\nWe've gotta hold on to what we've got\nIt doesn't make a difference if we make it or not\nWe've got each other and that's a lot for love\nWe'll give it a shot\n\n\nWhoa, we're halfway there\nWhoa-oh, living on a prayer\nTake my hand, we'll make it I swear\nWhoa-oh, living on a prayer, living on a prayer\n\n\nOoh, we gotta hold on, ready or not\nYou live for the fight when that's all that you've got\n\n\nWhoa, we're halfway there\nWhoa-oh, living on a prayer\nTake my hand and we'll make it, I swear\nWhoa-oh, living on a prayer\n\n\nWhoa, we're halfway there\nWhoa-oh, living on a prayer\nTake my hand and we'll make it, I swear\nWhoa-oh, living on a prayer\n\n\nWhoa, we're halfway there\nWhoa-oh, living on a prayer\nTake my hand and we'll make it, I swear\nWhoa-oh, living on a prayer"},{"id":"song-065","title":"Won't Get Fooled Again","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"We'll be fighting in the streets\nWith our children at our feet\nAnd the morals that they worship will be gone\nAnd the men who spurred us on\nSit in judgment of all wrong\nThey decide and the shotgun sings the song\n\n\nI'll tip my hat to the new Constitution\nTake a bow for the new revolution\nSmile and grin at the change all around\nPick up my guitar and play\nJust like yesterday\nThen I'll get on my knees and pray\nWe don't get fooled again\n\n\nChange, it had to come\nWe knew it all along\nWe were liberated from the fold, that's all\nAnd the world looks just the same\nAnd history ain't changed\n'Cause the banners, they all flown in the last war\n\n\nI'll tip my hat to the new Constitution\nTake a bow for the new revolution\nSmile and grin at the change all around\nPick up my guitar and play\nJust like yesterday\nThen I'll get on my knees and pray\nWe don't get fooled again\nNo, no\n\n\nI'll move myself and my family aside\nIf we happen to be left half-alive\nI'll get all my papers and smile at the sky\nFor I know that the hypnotized never lie\nDo you?\n\n\nYeah\nThere's nothing in the street\nLooks any different to me\nAnd the slogans are effaced, by-the-bye\nAnd the parting on the left\nIs now the parting on the right\nAnd the beards have all grown longer overnight\n\n\nI'll tip my hat to the new Constitution\nTake a bow for the new revolution\nSmile and grin at the change all around\nPick up my guitar and play\nJust like yesterday\nThen I'll get on my knees and pray\nWe don't get fooled again\nDon't get fooled again\nNo, no\n\n\nYeah\nMeet the new boss\nSame as the old boss"},{"id":"song-066","title":"L.A. Woman","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Well, I just got into town about an hour ago\nTook a look around, see which way the wind blow\nWhere the little girls in their Hollywood bungalows\nAre you a lucky little lady in the City of Light?\nOr just another lost angel?\nCity of Night, City of Night\nCity of Night, City of Night\nL.A. woman, L.A. woman\nL.A. woman, Sunday afternoon\nL.A. woman, Sunday afternoon\nL.A. woman, Sunday afternoon\nDrive through your suburbs\nInto your blues, into your blues, yeah\nInto your blues, into your blues!\n\n\nI see your hair is burning\nHills are filled with fire\nIf they say I never loved you\nYou know they are a liar\nDriving down your freeways\nMidnight alleys roam\nCops in cars, the topless bars\nNever saw a woman so alone\nSo alone, so alone, so alone\nMotel money murder-madness\nLet's change the mood from glad to sadness\n\n\nMr. Mojo Risin', Mr. Mojo Risin'\nMr. Mojo Risin', Mr. Mojo Risin'\nGot to keep on risin'\nMr. Mojo Risin', Mr. Mojo Risin'\nMojo Risin', gotta Mojo Risin'\nMr. Mojo Risin', gotta keep on risin'\nRisin', risin'\nGone risin', risin'\nI'm gone risin', risin'\nI gotta risin', risin'\nWell, risin', risin'\nI gotta, wooo, yeah, risin'\nWhoa, oh yeah\n\n\nWell, I just got into town about an hour ago\nTook a look around, see which way the wind blow\nWhere the little girls in their Hollywood bungalows\n\n\nAre you a lucky little lady in The City of Lights?\nOr just another lost angel?\nCity of Night, City of Night\nCity of Night, City of Night, whoa, c'mon\n\n\nL.A. Woman, L.A. Woman\nL.A. Woman, you're my woman\nLittle L.A. Woman, Little L.A. Woman\nL.A. L.A. Woman Woman\nL.A. Woman c'mon"},{"id":"song-067","title":"Pretty Woman","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"Wow!\n\n\nPretty woman, walking down the street\nPretty woman, the kind I'd like to meet\nPretty woman, I don't believe you it must be true\nNo one could look as good as you\nMercy!\n\n\nPretty woman wont you pardon me\nPretty woman I couldn't help but see\nPretty woman, Oh you look lovely as you could be\nAre you lonely just like me\nAdrrrrr...\n\n\nPretty woman stop a while\nPretty woman talk a while\nPretty woman give your smile to me\nPretty woman yeah yeah yeah\nPretty woman look my way\nPretty woman say you'll stay with me\nCause I need you, need you tonight\nUh!\n\n\nPretty woman don't walk on by\nPretty woman don't make me cry\nPretty woman don't walk away, yeah, okay\nIf that's the way it must be, okay\nI guess Ill go home, its late, maybe tomorrow night...\nBut wait.. what do I see..\nShe's walking back to me\n\n\nWow!\nWow!\nPretty woman"},{"id":"song-068","title":"Turn Me Loose","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"I was born to run\nI was born to dream\nThe craziest boy you ever seen\nI gotta do it my way\nOr no way at all\n\n\nAnd I was here to please\nI'm even on my knees\nMaking love to whoever I please\nI gotta do it my way\nOr no way at all\n\n\nAnd then you came around\nTried to tie me down\nI was such a clown\nYou had to have it your way\nOr no way at all\n\n\nWell I've had all I can take\nI can't take it no more\nI'm gonna pack my bags and fly my way\nOr no way at all\n\n\nSo why don't you turn me loose\nTurn me loose\nTurn me loose\nI gotta do it my way\nOr no way at all\nWhy don't you turn me loose\nTurn me loose\nTurn me loose\nI gotta do it my way\nI wanna fly\n\n\nI'm here to please\nI'm even on my knees\nMaking love to whoever I please\nI gotta do it my way\nI gotta do it my way\n\n\nAnd when you came around\nYou tried to tie me down\nI was such a clown\nYou had to have it your way\nWell, I'm saying no way\n\n\nSo why don't you turn me loose\nTurn me loose\nTurn me loose\nI gotta do it my way\nOr no way at all\n\n\nWhy don't you turn me loose\nTurn me loose\nTurn me loose\nI gotta do it my way\nI wanna fly, oh yeah\n\n\nSo why don't you turn me loose\nTurn me loose\nTurn me loose\nI gotta do it my way\nOr no way at all\n\n\nWhy don't you turn me loose\nTurn me loose\nTurn me loose\nI gotta do it my way\nI gotta do it my way\n\n\nWhy don't you turn me loose\nTurn me loose\nTurn me loose\nI gotta do it my way\nI wanna fly\n\n\nTurn me loose\nTurn me loose\nTurn me loose\nTurn me loose\nTurn me loose\nTurn me loose\nTurn me loose"},{"id":"song-069","title":"Already Gone","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Verse 1]\nWell, I heard some people talkin' just the other day\nAnd they said you were gonna put me on a shelf\nBut let me tell you I got some news for you\nAnd you'll soon find out it's true\nAnd then you'll have to eat your lunch all by yourself\n\n\n[Chorus]\n'Cause I'm already gone\nAnd I'm feelin' strong\nI will sing this vict'ry song\n\n\n[Post-Chorus]\nWoo hoo hoo, my my\nWoo hoo hoo\n\n\n[Verse 2]\nThe letter that you wrote me\nMade me stop and wonder why\nBut I guess you felt like you had to set things right\nJust remember this, my girl, when you look up in the sky\nYou can see the stars and still not see the light\n(That's right)\n\n\n[Chorus]\nAnd I'm already gone\nAnd I'm feelin' strong\nI will sing this vict'ry song\n\n\n[Post-Chorus]\nWoo hoo hoo, my my\nWoo hoo hoo\n\n\n[Instrumental Bridge]\n\n\n[Verse 3]\nWell, I know it wasn't you who held me down\nHeaven knows it wasn't you who set me free\nSo oftentimes it happens that we live our lives in chains\nAnd we never even know we have the key\n\n\n[Chorus]\nBut me, I'm already gone\nAnd I'm feelin' strong\nI will sing (I will sing) this vict'ry song\n'Cause I'm already gone\nYes, I'm already gone\nAnd I'm feelin' strong\nI will sing this vict'ry song\n'Cause I'm already gone\n\n\n[Outro]\nYes, I'm already gone\nAlready gone\nAll right, nighty-night\nAlready gone\nAlready gone\nAlready gone"},{"id":"song-070","title":"What I Like About You","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Intro]\nHey\nUh huh huh\nHey\nUh huh huh\n\n\n[Verse 1]\nWhat I like about you\nYou hold me tight\nTell me I'm the only one\nYou wanna come over tonight, yeah\n\n\n[Hook]\nKeep on whispering in my ear\nTell me all the things that I wanna hear\nCause it's true\nThat's what I like about you\n\n\n[Verse 2]\nWhat I like about you\nYou really know how to dance\nWhen you go up, down, jump around\nThink about true romance, yeah\n\n\n[Hook]\nKeep on whispering in my ear\nTell me all the things that I wanna hear\nCause it's true\nThat's what I like about you\nThat's what I like about you\nThat's what I like about you\nWow\n\n\nHey\n\n\n[Verse 3]\nWhat I like about you\nYou keep me warm at night\nNever wanna let you go\nKnow you make me feel alright, yeah\n\n\n[Hook]\nKeep on whispering in my ear\nTell me all the things that I wanna hear\n'Cause it's true\nThat's what I like about you\nThat's what I like about you\nThat's what I like about you\nThat's what I like about you\nThat's what I like about you\nThat's what I like about you\nThat's what I like about you\n\n\n[Outro]\nHey\nUh huh huh\nHey, hey, hey, hey\nUh huh huh, brrr\nHey\nUh huh huh\nHey"},{"id":"song-071","title":"Rock the USA","artist":"","key":"","tempo":"","patch":"","notes":"","lyrics":"[Verse 1]\nThey come from the cities and they come from the smaller towns\nBeat up cars with guitars and drummers going crack, boom, bam\n\n\n[Chorus]\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A., yeah, yeah\nRocking in the U.S.A\n\n\n[Verse 2]\nWell, they said goodbye to their families, said goodbye to their friends\nWith pipe dreams in their heads and very little money in their hands\nSome are black and some are white\nThey ain't too proud to sleep on your floor tonight\nWith the blind faith of Jesus, you know that they just might\nRocking in the U.S.A\nHey\n\n\n[Verse 3]\nVoices from nowhere and voices from the larger town\nFilled our head full of dreams and turned our world upside down\nAnd there was Frankie Lymon, Bobby Fuller, Mitch Ryder\n(They were rocking)\nJackie Wilson, Shangri-las, Young Rascals\n(They were rocking)\nSpotlight on Martha Reeves, let's don't forget James Brown\n\n\n[Chorus]\nRocking in the U.S.A\nHey\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A\nR.O.C.K. in the U.S.A"}],"setlists":[{"id":"setlist-master-band-list","name":"Master Band Setlist","sections":{"set1":["song-001","song-002","song-003","song-004","song-005","song-006","song-007","song-008","song-009","song-010","song-011","song-012","song-013","song-014","song-015","song-016"],"set2":["song-017","song-018","song-019","song-020","song-021","song-022","song-023","song-024","song-025","song-026","song-027","song-028","song-029","song-030","song-031","song-032","song-033","song-034"],"encore":["song-035","song-036","song-037","song-038","song-039","song-040","song-041","song-042","song-043","song-044","song-045","song-046","song-047","song-048","song-049","song-050","song-051","song-052","song-053","song-054","song-055","song-056","song-057","song-058","song-059","song-060","song-061","song-062","song-063"],"shelf":["song-064","song-065","song-066","song-067","song-068","song-069","song-070","song-071"]},"sectionDefs":[{"key":"set1","title":"SET 1","kind":"set"},{"key":"set2","title":"SET 2","kind":"set"},{"key":"encore","title":"ENCORE","kind":"encore"},{"key":"shelf","title":"SHELF","kind":"shelf"}]}],"activeSetlistId":"setlist-master-band-list","updatedAt":"2026-08-06T20:05:00.000Z"};
+  }
+
+  function normalizeState(raw) {
+    if (!raw || !Array.isArray(raw.songs) || !Array.isArray(raw.setlists) || !raw.setlists.length) return defaultState();
+    if (!Array.isArray(raw.savedSnapshots)) raw.savedSnapshots = [];
+    raw.savedSnapshots = raw.savedSnapshots.filter(item => item && item.id && item.name && Array.isArray(item.sectionDefs) && item.sections && typeof item.sections === 'object');
+    raw.version = 6;
+    raw.performanceLocked = raw.performanceLocked === true;
+    raw.songs = raw.songs.map(s => ({ id: s.id || uid(), title: s.title || 'Untitled Song', artist: s.artist || '', album: s.album || '', year: s.year || '', genre: s.genre || '', duration: s.duration || '', catalogId: s.catalogId || '', key: s.key || '', tempo: s.tempo || '', patch: s.patch || '', notes: s.notes || '', lyrics: s.lyrics || '', lyricsLayout: ['two','three'].includes(s.lyricsLayout) ? s.lyricsLayout : 'single', lyricsAlign: ['left','center','right'].includes(s.lyricsAlign) ? s.lyricsAlign : 'left', vocalRange: s.vocalRange === true || s.vocalRange === 'yes' }));
+    const validIds = new Set(raw.songs.map(s => s.id));
+
+    raw.setlists.forEach(sl => {
+      sl.id ||= uid();
+      sl.name ||= 'Setlist';
+      sl.sections ||= {};
+
+      if (!Array.isArray(sl.sectionDefs) || !sl.sectionDefs.length) {
+        sl.sectionDefs = DEFAULT_SECTION_DEFS.map(def => ({...def}));
+        Object.keys(sl.sections).forEach(key => {
+          if (!sl.sectionDefs.some(def => def.key === key)) sl.sectionDefs.splice(sl.sectionDefs.length - 1, 0, { key, title: key.toUpperCase(), kind: 'set' });
+        });
+      }
+
+      const usedKeys = new Set();
+      sl.sectionDefs = sl.sectionDefs
+        .map((def, index) => ({
+          key: String(def?.key || `section-${index + 1}`),
+          title: String(def?.title || `SET ${index + 1}`).trim() || `SET ${index + 1}`,
+          kind: ['set','encore','shelf'].includes(def?.kind) ? def.kind : (def?.key === 'shelf' ? 'shelf' : def?.key === 'encore' ? 'encore' : 'set')
+        }))
+        .filter(def => !usedKeys.has(def.key) && usedKeys.add(def.key));
+
+      if (!sl.sectionDefs.some(def => def.kind === 'shelf')) {
+        sl.sectionDefs.push({ key: 'shelf', title: 'SHELF', kind: 'shelf' });
+      }
+
+      const seenSongs = new Set();
+      sl.sectionDefs.forEach(def => {
+        const source = Array.isArray(sl.sections[def.key]) ? sl.sections[def.key] : [];
+        sl.sections[def.key] = source.filter(id => validIds.has(id) && !seenSongs.has(id) && seenSongs.add(id));
+      });
+
+      const shelfKey = getShelfDef(sl).key;
+      raw.songs.forEach(song => { if (!seenSongs.has(song.id)) sl.sections[shelfKey].push(song.id); });
+    });
+
+    if (!raw.setlists.some(s => s.id === raw.activeSetlistId)) raw.activeSetlistId = raw.setlists[0].id;
+    return raw;
+  }
+
+  function loadState() {
+    try { return normalizeState(JSON.parse(localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY)) || defaultState()); }
+    catch { return normalizeState(defaultState()); }
+  }
+
+  function saveState() {
+    state.updatedAt = new Date().toISOString();
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      $('saveStatus').textContent = `Saved ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}`;
+    } catch {
+      $('saveStatus').textContent = 'Use Export Backup to save changes';
+    }
+  }
+
+  function activeSetlist() { return state.setlists.find(s => s.id === state.activeSetlistId); }
+  function getSong(id) { return state.songs.find(s => s.id === id); }
+  function getSectionDefs(sl = activeSetlist()) { return sl?.sectionDefs || DEFAULT_SECTION_DEFS; }
+  function getShelfDef(sl = activeSetlist()) { return getSectionDefs(sl).find(def => def.kind === 'shelf') || { key: 'shelf', title: 'SHELF', kind: 'shelf' }; }
+  function getPerformanceDefs(sl = activeSetlist()) { return getSectionDefs(sl).filter(def => def.kind !== 'shelf'); }
+  function isPerformanceLocked() { return state.performanceLocked === true; }
+
+  function updateLockUI() {
+    const locked = isPerformanceLocked();
+    for (const id of ['setLockBtn', 'songLockBtn']) {
+      const button = $(id);
+      button.textContent = locked ? '🔒 PERFORMANCE MODE' : '🔓 EDIT MODE';
+      button.classList.toggle('mode-locked', locked);
+      button.classList.toggle('mode-edit', !locked);
+      button.setAttribute('aria-pressed', String(locked));
+      button.title = locked ? 'Tap to unlock changes' : 'Tap to prevent accidental edits and moves';
+    }
+    for (const id of ['newSetlistBtn','duplicateSetlistBtn','renameSetlistBtn','addSetBtn','addSongBtn','selectModeBtn','saveSnapshotBtn']) $(id).disabled = locked;
+    $('restoreInput').disabled = locked;
+    $('restoreBtn').classList.toggle('is-disabled', locked);
+    $('restoreBtn').title = locked ? 'Unlock Performance Mode to import a backup' : 'Choose a JSON backup from Files';
+    $('setlistSelect').disabled = locked;
+    $('bulkMoveSelect').disabled = locked;
+    $('editFromPerformanceBtn').disabled = locked;
+    $('editHint').textContent = locked ? '🔒 Lyrics are protected' : 'Tap lyrics to edit • Lock before performing';
+    $('performanceLyrics').classList.toggle('editable', !locked);
+    if (locked) {
+      $('selectionBar').classList.remove('show');
+      $('searchInput').blur();
+    }
+  }
+
+  function togglePerformanceLock() {
+    if (!isPerformanceLocked() && inlineEditing) finishInlineEdit(true);
+    state.performanceLocked = !isPerformanceLocked();
+    if (state.performanceLocked) { selectMode = false; selectedSongIds.clear(); cancelTouchDrag(); }
+    saveState(); renderBoard(); updateSelectionBar(); updateLockUI();
+  }
+
+  function ensureSongInAllSetlists(songId, exceptSetlistId = null) {
+    state.setlists.forEach(sl => {
+      if (sl.id === exceptSetlistId) return;
+      const exists = getSectionDefs(sl).some(({key}) => (sl.sections[key] || []).includes(songId));
+      if (!exists) sl.sections[getShelfDef(sl).key].push(songId);
+    });
+  }
+
+  function renderAll() {
+    renderSetlistSelect();
+    renderBoard();
+    updateSelectionBar();
+    updateLockUI();
+  }
+
+  function renderSetlistSelect() {
+    const select = $('setlistSelect');
+    select.textContent = '';
+    state.setlists.forEach(sl => {
+      const opt = document.createElement('option');
+      opt.value = sl.id; opt.textContent = sl.name; opt.selected = sl.id === state.activeSetlistId;
+      select.appendChild(opt);
+    });
+  }
+
+  function searchMatches(song, query) {
+    if (!query) return true;
+    return [song.title, song.artist, song.album, song.year, song.genre, song.duration, song.key, song.tempo, song.patch, song.notes, song.lyrics].join(' ').toLowerCase().includes(query);
+  }
+
+  function renderBoard() {
+    const board = $('board');
+    board.querySelectorAll('.song-list').forEach(list => sectionScrollPositions.set(list.dataset.section, list.scrollTop));
+    board.textContent = '';
+    const sl = activeSetlist();
+    const defs = getSectionDefs(sl);
+    const query = $('searchInput').value.trim().toLowerCase();
+    updateBulkMoveOptions();
+
+    defs.forEach(def => {
+      const section = document.createElement('section');
+      section.className = 'section';
+      section.dataset.section = def.key;
+
+      const header = document.createElement('div');
+      header.className = 'section-header';
+      const title = document.createElement('button'); title.type = 'button'; title.className = 'section-title'; title.textContent = def.title;
+      title.title = isPerformanceLocked() ? def.title : `Rename ${def.title}`;
+      title.disabled = isPerformanceLocked();
+      title.addEventListener('click', () => renameSection(def.key));
+      const count = document.createElement('span'); count.className = 'count'; count.textContent = (sl.sections[def.key] || []).length;
+      const actions = document.createElement('div'); actions.className = 'section-actions';
+
+      if (def.kind === 'shelf') {
+        const alpha = document.createElement('button'); alpha.className = 'btn small'; alpha.textContent = 'A–Z'; alpha.title = 'Alphabetize Shelf'; alpha.disabled = isPerformanceLocked();
+        alpha.addEventListener('click', () => alphabetizeShelf()); actions.appendChild(alpha);
+      } else {
+        const remove = document.createElement('button'); remove.className = 'btn small danger'; remove.textContent = '−'; remove.title = `Remove ${def.title}`; remove.disabled = isPerformanceLocked();
+        remove.addEventListener('click', () => removeSection(def.key)); actions.appendChild(remove);
+      }
+
+      const help = document.createElement('button'); help.className = 'btn small'; help.textContent = '?'; help.addEventListener('click', () => $('helpDialog').showModal());
+      actions.appendChild(help);
+      header.append(title, count, actions);
+
+      const list = document.createElement('div');
+      list.className = 'song-list'; list.dataset.section = def.key;
+      list.tabIndex = 0;
+      list.setAttribute('aria-label', `${def.title} songs`);
+      list.addEventListener('dragover', onDragOver);
+      list.addEventListener('drop', onDrop);
+      list.addEventListener('dragleave', (e) => { if (!list.contains(e.relatedTarget)) clearDropIndicator(); });
+
+      const ids = sl.sections[def.key] || [];
+      const visibleIds = ids.filter(id => { const song = getSong(id); return song && searchMatches(song, query); });
+      if (!visibleIds.length) {
+        const empty = document.createElement('div'); empty.className = 'empty'; empty.textContent = query ? 'No matching songs here' : 'Drag songs here'; list.appendChild(empty);
+      } else {
+        visibleIds.forEach(id => list.appendChild(createSongCard(id, def.key)));
+      }
+      section.append(header, list); board.appendChild(section);
+      // Restore instantly after rebuilding the board. Smooth programmatic scrolling
+      // made the section visibly travel from the top after every song move.
+      list.style.scrollBehavior = 'auto';
+      list.scrollTop = sectionScrollPositions.get(def.key) || 0;
+    });
+  }
+
+  function createSongCard(songId, sectionKey) {
+    const song = getSong(songId);
+    const card = document.createElement('article');
+    card.className = 'song-card' + (selectedSongIds.has(songId) ? ' selected' : '');
+    card.dataset.songId = songId; card.dataset.section = sectionKey; card.draggable = !isPerformanceLocked();
+    card.addEventListener('dragstart', onDragStart); card.addEventListener('dragend', onDragEnd);
+
+    const handle = document.createElement('button');
+    handle.className = 'drag-handle'; handle.type = 'button'; handle.textContent = '⋮⋮'; handle.title = selectMode ? (selectedSongIds.has(songId) ? 'Drag selected songs' : 'Select and drag song') : 'Drag to move';
+    handle.disabled = isPerformanceLocked();
+    handle.addEventListener('pointerdown', (e) => beginTouchDrag(e, card));
+
+    const main = document.createElement('button'); main.type = 'button'; main.className = 'song-main';
+    const title = document.createElement('div'); title.className = 'song-title'; title.textContent = song.title;
+    const labelRow = document.createElement('div'); labelRow.className = 'song-label-row';
+    if (song.vocalRange) {
+      const star = document.createElement('span'); star.className = 'vocal-star'; star.textContent = '★'; star.title = 'Within my vocal range'; star.setAttribute('aria-label', 'Within my vocal range');
+      labelRow.appendChild(star);
+    }
+    labelRow.appendChild(title);
+    const metaParts = [song.artist, song.year, song.key && `Key ${song.key}`, song.tempo, song.patch].filter(Boolean);
+    const meta = document.createElement('div'); meta.className = 'song-meta'; meta.textContent = metaParts.join(' • ') || 'Tap to view lyrics';
+    main.append(labelRow, meta);
+    main.addEventListener('click', () => selectMode ? toggleSelected(songId) : openPerformance(songId));
+
+    const actions = document.createElement('div'); actions.className = 'card-actions';
+    const up = document.createElement('button'); up.type = 'button'; up.className = 'icon-btn mobile-order'; up.textContent = '↑'; up.title = 'Move up'; up.disabled = isPerformanceLocked(); up.addEventListener('click', () => moveWithinSection(songId, sectionKey, -1));
+    const down = document.createElement('button'); down.type = 'button'; down.className = 'icon-btn mobile-order'; down.textContent = '↓'; down.title = 'Move down'; down.disabled = isPerformanceLocked(); down.addEventListener('click', () => moveWithinSection(songId, sectionKey, 1));
+    const move = document.createElement('select'); move.className = 'move-menu'; move.title = 'Move song'; move.disabled = isPerformanceLocked();
+    move.innerHTML = `<option value="">Move…</option>${getSectionDefs().map(d => `<option value="${d.key}">${escapeHtml(d.title)}</option>`).join('')}<option value="edit">Edit</option>`;
+    move.addEventListener('change', () => {
+      if (move.value === 'edit') openSongEditor(songId);
+      else if (move.value) moveSong(songId, move.value);
+      move.value = '';
+    });
+    actions.append(up, down, move);
+    card.append(handle, main, actions);
+    return card;
+  }
+
+  function removeSongFromAllSections(sl, songId) {
+    getSectionDefs(sl).forEach(({key}) => { sl.sections[key] = (sl.sections[key] || []).filter(id => id !== songId); });
+  }
+
+  function findSongSection(sl, songId) {
+    const match = getSectionDefs(sl).find(({key}) => (sl.sections[key] || []).includes(songId));
+    return match ? match.key : null;
+  }
+
+  function orderedSongIds(sl, ids) {
+    const wanted = ids instanceof Set ? ids : new Set(ids || []);
+    return getSectionDefs(sl)
+      .flatMap(({key}) => sl.sections[key] || [])
+      .filter(id => wanted.has(id));
+  }
+
+  function dragGroupFor(songId) {
+    if (!selectMode) return [songId];
+    if (!selectedSongIds.has(songId)) {
+      selectedSongIds.add(songId);
+      const card = document.querySelector(`.song-card[data-song-id="${CSS.escape(songId)}"]`);
+      card?.classList.add('selected');
+      updateSelectionBar();
+    }
+    return orderedSongIds(activeSetlist(), selectedSongIds);
+  }
+
+  function moveSongs(songIds, targetSection, targetIndex = null) {
+    if (isPerformanceLocked()) return;
+    const sl = activeSetlist();
+    if (!getSectionDefs(sl).some(def => def.key === targetSection)) return;
+    const orderedIds = orderedSongIds(sl, new Set(songIds || []));
+    if (!orderedIds.length) return;
+    orderedIds.forEach(id => removeSongFromAllSections(sl, id));
+    const arr = sl.sections[targetSection] ||= [];
+    const index = targetIndex === null ? arr.length : Math.max(0, Math.min(arr.length, targetIndex));
+    arr.splice(index, 0, ...orderedIds);
+    saveState(); renderBoard(); updateSelectionBar();
+  }
+
+  function moveSong(songId, targetSection, targetIndex = null) {
+    moveSongs([songId], targetSection, targetIndex);
+  }
+
+  function moveWithinSection(songId, sectionKey, delta) {
+    if (isPerformanceLocked()) return;
+    const arr = activeSetlist().sections[sectionKey];
+    const idx = arr.indexOf(songId); const next = Math.max(0, Math.min(arr.length - 1, idx + delta));
+    if (idx === -1 || idx === next) return;
+    arr.splice(idx, 1); arr.splice(next, 0, songId); saveState(); renderBoard();
+  }
+
+  function alphabetizeShelf() {
+    if (isPerformanceLocked()) return;
+    const shelfKey = getShelfDef().key;
+    activeSetlist().sections[shelfKey].sort((a,b) => (getSong(a)?.title || '').localeCompare(getSong(b)?.title || '', undefined, {sensitivity:'base'}));
+    saveState(); renderBoard();
+  }
+
+  let draggedIds = [];
+  const dropMarker = document.createElement('div');
+  dropMarker.className = 'drop-marker';
+  dropMarker.setAttribute('aria-hidden', 'true');
+  let pendingDrop = null;
+
+  function clearDropIndicator() {
+    dropMarker.remove();
+    pendingDrop = null;
+    document.querySelectorAll('.song-list').forEach(el => el.classList.remove('drag-over'));
+  }
+
+  function updateDropIndicator(list, clientY, songIds) {
+    if (isPerformanceLocked()) { clearDropIndicator(); return; }
+    if (!list) { clearDropIndicator(); return; }
+    const movingIds = Array.isArray(songIds) ? songIds.filter(Boolean) : [songIds].filter(Boolean);
+    if (!movingIds.length) { clearDropIndicator(); return; }
+    const movingSet = new Set(movingIds);
+    document.querySelectorAll('.song-list').forEach(el => el.classList.toggle('drag-over', el === list));
+
+    const sectionKey = list.dataset.section;
+    const sectionIds = activeSetlist().sections[sectionKey] || [];
+    const remainingIds = sectionIds.filter(id => !movingSet.has(id));
+    const cards = [...list.querySelectorAll('.song-card')]
+      .filter(card => !movingSet.has(card.dataset.songId) && !card.classList.contains('dragging'));
+
+    let beforeCard = null;
+    for (const card of cards) {
+      const rect = card.getBoundingClientRect();
+      if (clientY < rect.top + rect.height / 2) { beforeCard = card; break; }
+    }
+
+    let targetIndex;
+    if (beforeCard) {
+      list.insertBefore(dropMarker, beforeCard);
+      targetIndex = remainingIds.indexOf(beforeCard.dataset.songId);
+      if (targetIndex < 0) targetIndex = remainingIds.length;
+    } else {
+      const empty = list.querySelector('.empty');
+      if (empty) list.insertBefore(dropMarker, empty);
+      else list.appendChild(dropMarker);
+      targetIndex = remainingIds.length;
+    }
+
+    pendingDrop = { sectionKey, targetIndex: Math.max(0, targetIndex), songIds: movingIds };
+  }
+
+  function markDraggedCards(ids, active) {
+    const movingSet = new Set(ids || []);
+    document.querySelectorAll('.song-card').forEach(card => {
+      if (movingSet.has(card.dataset.songId)) card.classList.toggle('dragging', active);
+    });
+  }
+
+  function onDragStart(e) {
+    if (isPerformanceLocked()) { e.preventDefault(); return; }
+    const songId = e.currentTarget.dataset.songId;
+    draggedIds = dragGroupFor(songId);
+    markDraggedCards(draggedIds, true);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', draggedIds[0] || songId);
+    try { e.dataTransfer.setData('application/x-setlist-song-ids', JSON.stringify(draggedIds)); } catch {}
+  }
+  function onDragEnd() {
+    markDraggedCards(draggedIds, false);
+    clearDropIndicator();
+    draggedIds = [];
+  }
+  function onDragOver(e) {
+    if (isPerformanceLocked()) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    updateDropIndicator(e.currentTarget, e.clientY, draggedIds);
+  }
+  function onDrop(e) {
+    if (isPerformanceLocked()) { e.preventDefault(); clearDropIndicator(); return; }
+    e.preventDefault();
+    let ids = draggedIds.slice();
+    try {
+      const transferred = JSON.parse(e.dataTransfer.getData('application/x-setlist-song-ids') || '[]');
+      if (Array.isArray(transferred) && transferred.length) ids = transferred;
+    } catch {}
+    if (!ids.length) {
+      const singleId = e.dataTransfer.getData('text/plain');
+      if (singleId) ids = [singleId];
+    }
+    if (ids.length) updateDropIndicator(e.currentTarget, e.clientY, ids);
+    const drop = pendingDrop;
+    clearDropIndicator();
+    if (!ids.length || !drop) return;
+    moveSongs(ids, drop.sectionKey, drop.targetIndex);
+  }
+
+  function beginTouchDrag(e, card) {
+    if (isPerformanceLocked()) return;
+    if (e.button > 0) return;
+    e.preventDefault();
+    const songId = card.dataset.songId;
+    const songIds = dragGroupFor(songId);
+    const rect = card.getBoundingClientRect();
+    const ghost = card.cloneNode(true);
+    ghost.classList.add('ghost');
+    ghost.style.left = `${rect.left}px`; ghost.style.top = `${rect.top}px`; ghost.style.width = `${rect.width}px`;
+    if (songIds.length > 1) {
+      const title = ghost.querySelector('.song-title');
+      const meta = ghost.querySelector('.song-meta');
+      if (title) title.textContent = `${songIds.length} selected songs`;
+      if (meta) meta.textContent = 'Moving together';
+    }
+    ghost.querySelectorAll('button,select').forEach(el => el.disabled = true);
+    document.body.appendChild(ghost);
+    markDraggedCards(songIds, true);
+    touchDrag = { pointerId: e.pointerId, songIds, card, ghost, offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top };
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    window.addEventListener('pointermove', onTouchDragMove, {passive:false});
+    window.addEventListener('pointerup', endTouchDrag, {once:true});
+    window.addEventListener('pointercancel', cancelTouchDrag, {once:true});
+  }
+  function onTouchDragMove(e) {
+    if (!touchDrag || e.pointerId !== touchDrag.pointerId) return;
+    e.preventDefault();
+    touchDrag.ghost.style.left = `${e.clientX - touchDrag.offsetX}px`;
+    touchDrag.ghost.style.top = `${e.clientY - touchDrag.offsetY}px`;
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const list = under?.closest('.song-list');
+    if (list) updateDropIndicator(list, e.clientY, touchDrag.songIds);
+    else clearDropIndicator();
+  }
+  function endTouchDrag(e) {
+    if (!touchDrag || e.pointerId !== touchDrag.pointerId) return cancelTouchDrag();
+    const songIds = touchDrag.songIds.slice();
+    const drop = pendingDrop;
+    cancelTouchDrag();
+    if (drop) moveSongs(songIds, drop.sectionKey, drop.targetIndex);
+  }
+  function cancelTouchDrag() {
+    window.removeEventListener('pointermove', onTouchDragMove);
+    if (touchDrag) {
+      markDraggedCards(touchDrag.songIds, false);
+      touchDrag.ghost.remove();
+    }
+    clearDropIndicator();
+    touchDrag = null;
+  }
+
+  function toggleSelected(songId) {
+    if (isPerformanceLocked()) return;
+    selectedSongIds.has(songId) ? selectedSongIds.delete(songId) : selectedSongIds.add(songId);
+    renderBoard(); updateSelectionBar();
+  }
+  function updateSelectionBar() {
+    $('selectionBar').classList.toggle('show', selectMode && !isPerformanceLocked());
+    $('selectionCount').textContent = `${selectedSongIds.size} selected`;
+    $('selectModeBtn').textContent = selectMode ? 'Done Selecting' : 'Select Multiple';
+  }
+  function bulkMove(targetSection) {
+    if (isPerformanceLocked()) return;
+    if (!targetSection || !selectedSongIds.size) return;
+    const sl = activeSetlist();
+    const orderedIds = getSectionDefs(sl).flatMap(({key}) => sl.sections[key] || []).filter(id => selectedSongIds.has(id));
+    orderedIds.forEach(id => removeSongFromAllSections(sl, id));
+    sl.sections[targetSection].push(...orderedIds);
+    selectedSongIds.clear(); saveState(); renderBoard(); updateSelectionBar();
+  }
+
+  let catalogRequestToken = 0;
+  let catalogCleanup = null;
+  let lastCatalogSearchAt = 0;
+
+  function formatDuration(ms) {
+    const total = Math.max(0, Math.round(Number(ms || 0) / 1000));
+    if (!total) return '';
+    const minutes = Math.floor(total / 60);
+    const seconds = String(total % 60).padStart(2, '0');
+    return `${minutes}:${seconds}`;
+  }
+
+  function catalogYear(item) {
+    const date = String(item?.releaseDate || '');
+    return /^\d{4}/.test(date) ? date.slice(0, 4) : '';
+  }
+
+  function clearCatalogResults(message = '') {
+    $('catalogResults').textContent = '';
+    if (message) $('catalogStatus').textContent = message;
+  }
+
+  function cleanupCatalogRequest() {
+    if (typeof catalogCleanup === 'function') catalogCleanup();
+    catalogCleanup = null;
+  }
+
+  function renderCatalogResults(items) {
+    const results = $('catalogResults');
+    results.textContent = '';
+    const songs = (Array.isArray(items) ? items : []).filter(item => item && item.kind === 'song');
+    if (!songs.length) {
+      $('catalogStatus').textContent = 'No matching songs found. Try adding the artist name or use manual entry below.';
+      return;
+    }
+    $('catalogStatus').textContent = `${songs.length} result${songs.length === 1 ? '' : 's'} — choose the recording you want.`;
+    songs.forEach(item => {
+      const row = document.createElement('div'); row.className = 'catalog-result';
+      const info = document.createElement('div');
+      const title = document.createElement('div'); title.className = 'catalog-result-title'; title.textContent = item.trackName || 'Untitled';
+      const parts = [item.artistName, item.collectionName, catalogYear(item), item.primaryGenreName, formatDuration(item.trackTimeMillis)].filter(Boolean);
+      const meta = document.createElement('div'); meta.className = 'catalog-result-meta'; meta.textContent = parts.join(' • ');
+      info.append(title, meta);
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'btn small primary'; button.textContent = 'Import';
+      button.addEventListener('click', () => importCatalogSong(item));
+      row.append(info, button); results.appendChild(row);
+    });
+  }
+
+  function searchCatalog() {
+    const query = $('catalogSearchInput').value.trim();
+    if (!query) { clearCatalogResults('Enter a song title or song + artist first.'); $('catalogSearchInput').focus(); return; }
+    const now = Date.now();
+    if (now - lastCatalogSearchAt < 1000) { $('catalogStatus').textContent = 'Please wait a moment before searching again.'; return; }
+    lastCatalogSearchAt = now;
+    cleanupCatalogRequest();
+    clearCatalogResults('Searching the online catalog…');
+    $('catalogSearchBtn').disabled = true;
+
+    const token = ++catalogRequestToken;
+    const callbackName = `setlistLyricsCatalog_${token}_${Date.now()}`;
+    const script = document.createElement('script');
+    let timer = null;
+    let finished = false;
+
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      if (timer) clearTimeout(timer);
+      script.remove();
+      try { delete window[callbackName]; } catch { window[callbackName] = undefined; }
+      $('catalogSearchBtn').disabled = false;
+      if (catalogCleanup === finish) catalogCleanup = null;
+    };
+
+    window[callbackName] = (payload) => {
+      if (token !== catalogRequestToken) { finish(); return; }
+      renderCatalogResults(payload?.results || []);
+      finish();
+    };
+    script.onerror = () => {
+      if (token === catalogRequestToken) $('catalogStatus').textContent = 'Catalog search could not connect. Check your internet connection and try again.';
+      finish();
+    };
+    const params = new URLSearchParams({ term: query, country: 'US', media: 'music', entity: 'song', limit: '15', callback: callbackName });
+    script.src = `https://itunes.apple.com/search?${params.toString()}`;
+    script.async = true;
+    document.body.appendChild(script);
+    timer = setTimeout(() => {
+      if (token === catalogRequestToken) $('catalogStatus').textContent = 'Catalog search timed out. Check your internet connection and try again.';
+      finish();
+    }, 12000);
+    catalogCleanup = finish;
+  }
+
+  function importCatalogSong(item) {
+    $('songCatalogId').value = item?.trackId ? String(item.trackId) : '';
+    $('songTitle').value = item?.trackName || $('songTitle').value;
+    $('songArtist').value = item?.artistName || $('songArtist').value;
+    $('songAlbum').value = item?.collectionName || '';
+    $('songYear').value = catalogYear(item);
+    $('songGenre').value = item?.primaryGenreName || '';
+    $('songDuration').value = formatDuration(item?.trackTimeMillis);
+    $('catalogStatus').textContent = `Imported “${item?.trackName || 'song'}”. Add your lyrics/performance details, then Save Song.`;
+    $('catalogResults').textContent = '';
+    $('songTitle').focus();
+  }
+
+  function openSongEditor(songId = '') {
+    if (isPerformanceLocked()) return;
+    const song = songId ? getSong(songId) : null;
+    $('songDialogTitle').textContent = song ? 'Edit Song' : 'Add Song';
+    cleanupCatalogRequest();
+    $('songId').value = song?.id || '';
+    $('songCatalogId').value = song?.catalogId || '';
+    $('songTitle').value = song?.title || '';
+    $('songArtist').value = song?.artist || '';
+    $('songAlbum').value = song?.album || '';
+    $('songYear').value = song?.year || '';
+    $('songGenre').value = song?.genre || '';
+    $('songDuration').value = song?.duration || '';
+    $('songKey').value = song?.key || '';
+    $('songTempo').value = song?.tempo || '';
+    $('songPatch').value = song?.patch || '';
+    $('songNotes').value = song?.notes || '';
+    $('songLyrics').value = song?.lyrics || '';
+    $('songLyricsLayout').value = ['two','three'].includes(song?.lyricsLayout) ? song.lyricsLayout : 'single';
+    $('songVocalRange').value = song?.vocalRange ? 'yes' : 'no';
+    $('songLyricsAlign').value = ['left','center','right'].includes(song?.lyricsAlign) ? song.lyricsAlign : 'left';
+    $('deleteSongBtn').classList.toggle('hidden', !song);
+    $('catalogSearchInput').value = song ? [song.title, song.artist].filter(Boolean).join(' ') : '';
+    clearCatalogResults(song ? 'Search to refresh or add catalog metadata without changing your lyrics or performance notes.' : 'Search and import title, artist, album, year, genre, and duration.');
+    $('songDialog').showModal();
+    setTimeout(() => (song ? $('songTitle') : $('catalogSearchInput')).focus(), 50);
+  }
+
+  function saveSongFromForm() {
+    if (isPerformanceLocked()) return;
+    const id = $('songId').value;
+    const data = {
+      title: $('songTitle').value.trim(), artist: $('songArtist').value.trim(), album: $('songAlbum').value.trim(), year: $('songYear').value.trim(),
+      genre: $('songGenre').value.trim(), duration: $('songDuration').value.trim(), catalogId: $('songCatalogId').value.trim(),
+      key: $('songKey').value.trim(), tempo: $('songTempo').value.trim(), patch: $('songPatch').value.trim(), notes: $('songNotes').value.trim(),
+      lyrics: $('songLyrics').value, lyricsLayout: ['two','three'].includes($('songLyricsLayout').value) ? $('songLyricsLayout').value : 'single', lyricsAlign: ['left','center','right'].includes($('songLyricsAlign').value) ? $('songLyricsAlign').value : 'left', vocalRange: $('songVocalRange').value === 'yes'
+    };
+    if (!data.title) return;
+    if (id) Object.assign(getSong(id), data);
+    else {
+      const song = { id: uid(), ...data }; state.songs.push(song); activeSetlist().sections[getShelfDef().key].push(song.id); ensureSongInAllSetlists(song.id, activeSetlist().id);
+    }
+    saveState(); renderBoard(); $('songDialog').close();
+  }
+
+  function deleteSong(songId) {
+    if (isPerformanceLocked()) return;
+    const song = getSong(songId); if (!song) return;
+    if (!confirm(`Delete “${song.title}” from every setlist? This cannot be undone unless you have a backup.`)) return;
+    state.songs = state.songs.filter(s => s.id !== songId);
+    state.setlists.forEach(sl => removeSongFromAllSections(sl, songId));
+    selectedSongIds.delete(songId); saveState(); renderAll(); $('songDialog').close();
+  }
+
+  function performanceOrder() {
+    const sl = activeSetlist();
+    return getPerformanceDefs(sl).flatMap(def => sl.sections[def.key] || []);
+  }
+  function openPerformance(songId) {
+    currentPerformanceSongId = songId; renderPerformance(); updateLockUI(); $('performanceDialog').showModal();
+  }
+  function splitLyricsIntoColumns(text, count = 2) {
+    const clean = String(text || '').replace(/\r\n/g, '\n').trimEnd();
+    if (!clean) return Array(count).fill('');
+    // Prefer verse/paragraph boundaries. When there are fewer verses than
+    // columns, use full-line boundaries; never split within a lyric line.
+    let boundaries = [...clean.matchAll(/\n{2,}/g)].map(m => m.index + m[0].length);
+    if (boundaries.length < count - 1) boundaries = [...clean.matchAll(/\n/g)].map(m => m.index + 1);
+    let start = 0;
+    const parts = [];
+    for (let column = 0; column < count - 1; column++) {
+      const remainingColumns = count - column;
+      const valid = boundaries.filter((pos, index) => pos > start && boundaries.length - index >= remainingColumns - 1);
+      if (!valid.length) { parts.push(clean.slice(start)); start = clean.length; continue; }
+      const target = start + (clean.length - start) / remainingColumns;
+      const cut = valid.reduce((best, pos) => Math.abs(pos - target) < Math.abs(best - target) ? pos : best);
+      parts.push(clean.slice(start, cut).replace(/\n+$/, ''));
+      start = cut;
+    }
+    parts.push(clean.slice(start).replace(/\n+$/, ''));
+    return parts;
+  }
+
+  function renderPerformanceLyrics(text, layout, align = 'left') {
+    const container = $('performanceLyrics');
+    container.textContent = '';
+    container.classList.toggle('two-column', layout === 'two');
+    container.classList.toggle('three-column', layout === 'three');
+    container.classList.toggle('single-column', layout === 'single');
+    container.classList.remove('align-left','align-center','align-right');
+    container.classList.add(`align-${['left','center','right'].includes(align) ? align : 'left'}`);
+
+    if (layout === 'two' || layout === 'three') {
+      splitLyricsIntoColumns(text, layout === 'three' ? 3 : 2).forEach(part => {
+        const column = document.createElement('div');
+        column.className = 'lyrics-column';
+        column.textContent = part;
+        container.appendChild(column);
+      });
+    } else {
+      container.textContent = text;
+    }
+
+    container.style.fontSize = `${performanceFontSize}px`;
+    container.scrollTop = 0;
+  }
+
+  function renderPerformance() {
+    const song = getSong(currentPerformanceSongId); if (!song) return;
+    $('performanceSongTitle').textContent = song.title;
+    $('performanceSongMeta').textContent = [song.artist, song.album, song.year, song.genre, song.duration, song.key && `Key ${song.key}`, song.tempo, song.patch].filter(Boolean).join(' • ');
+    const text = [song.notes && `NOTES\n${song.notes}`, song.lyrics || 'No lyrics have been added yet.'].filter(Boolean).join('\n\n');
+    const layout = ['two','three'].includes(song.lyricsLayout) ? song.lyricsLayout : 'single';
+    const align = ['left','center','right'].includes(song.lyricsAlign) ? song.lyricsAlign : 'left';
+    renderPerformanceLyrics(text, layout, align);
+    $('lyricsLayoutSelect').value = layout;
+    ['Left','Center','Right'].forEach(label => {
+      const btn = $(`align${label}Btn`);
+      if (btn) {
+        const value = label.toLowerCase();
+        btn.classList.toggle('active', align === value);
+        btn.setAttribute('aria-pressed', align === value ? 'true' : 'false');
+      }
+    });
+    const order = performanceOrder(); const idx = order.indexOf(song.id);
+    $('prevSongBtn').disabled = idx <= 0; $('nextSongBtn').disabled = idx === -1 || idx >= order.length - 1;
+    updateLockUI();
+  }
+
+  function setPerformanceLayout(layout) {
+    if (!['single','two','three'].includes(layout)) return;
+    if (inlineEditing) finishInlineEdit(true);
+    const song = getSong(currentPerformanceSongId);
+    if (!song) return;
+    song.lyricsLayout = layout;
+    saveState();
+    renderPerformance();
+  }
+  function setPerformanceAlignment(align) {
+    if (inlineEditing) finishInlineEdit(true);
+    const song = getSong(currentPerformanceSongId);
+    if (!song || !['left','center','right'].includes(align)) return;
+    song.lyricsAlign = align;
+    saveState();
+    renderPerformance();
+  }
+
+  function stepPerformance(delta) {
+    if (inlineEditing) finishInlineEdit(true);
+    const order = performanceOrder(); const idx = order.indexOf(currentPerformanceSongId); const next = order[idx + delta];
+    if (next) { currentPerformanceSongId = next; renderPerformance(); }
+  }
+
+  function setLyricsFocusMode(enabled) {
+    if (enabled && inlineEditing) finishInlineEdit(true);
+    $('performancePanel').classList.toggle('focus-mode', enabled);
+  }
+
+  function beginInlineEdit() {
+    if (isPerformanceLocked() || inlineEditing || !$('performanceDialog').open) return;
+    setLyricsFocusMode(false);
+    const song = getSong(currentPerformanceSongId);
+    if (!song) return;
+    inlineEditing = true;
+    $('inlineLyricsEditor').value = song.lyrics || '';
+    $('inlineLyricsEditor').style.fontSize = `${performanceFontSize}px`;
+    $('performanceLyrics').classList.add('hidden');
+    $('inlineLyricsEditor').classList.remove('hidden');
+    $('inlineEditorBar').classList.remove('hidden');
+    $('inlineLyricsEditor').focus();
+  }
+
+  function finishInlineEdit(save) {
+    if (!inlineEditing) return;
+    if (save && !isPerformanceLocked()) {
+      const song = getSong(currentPerformanceSongId);
+      if (song) { song.lyrics = $('inlineLyricsEditor').value; saveState(); }
+    }
+    inlineEditing = false;
+    $('performanceLyrics').classList.remove('hidden');
+    $('inlineLyricsEditor').classList.add('hidden');
+    $('inlineEditorBar').classList.add('hidden');
+    renderPerformance();
+  }
+
+  function updateBulkMoveOptions() {
+    const select = $('bulkMoveSelect');
+    const current = select.value;
+    select.innerHTML = '<option value="">Move selected to…</option>' +
+      getSectionDefs().map(def => `<option value="${def.key}">${escapeHtml(def.title)}</option>`).join('');
+    if ([...select.options].some(opt => opt.value === current)) select.value = current;
+  }
+
+  function nextSetNumber(sl = activeSetlist()) {
+    const numbers = getSectionDefs(sl)
+      .filter(def => def.kind === 'set')
+      .map(def => Number((def.title.match(/\d+/) || [0])[0]))
+      .filter(Number.isFinite);
+    return Math.max(0, ...numbers) + 1;
+  }
+
+  function addSetSection() {
+    if (isPerformanceLocked()) return;
+    const sl = activeSetlist();
+    const number = nextSetNumber(sl);
+    const name = prompt('Name the new set:', `SET ${number}`);
+    if (!name?.trim()) return;
+    const key = `set-${Date.now().toString(36)}-${Math.random().toString(16).slice(2,7)}`;
+    const def = { key, title: name.trim().toUpperCase(), kind: 'set' };
+    const defs = getSectionDefs(sl);
+    const insertAt = defs.findIndex(item => item.kind === 'encore' || item.kind === 'shelf');
+    if (insertAt === -1) defs.push(def); else defs.splice(insertAt, 0, def);
+    sl.sections[key] = [];
+    saveState(); renderBoard();
+    setTimeout(() => document.querySelector(`.song-list[data-section="${CSS.escape(key)}"]`)?.focus(), 0);
+  }
+
+  function renameSection(sectionKey) {
+    if (isPerformanceLocked()) return;
+    const def = getSectionDefs().find(item => item.key === sectionKey);
+    if (!def) return;
+    const name = prompt('Rename this set:', def.title);
+    if (!name || !name.trim() || name.trim() === def.title) return;
+    def.title = name.trim();
+    saveState(); renderBoard();
+  }
+
+  function removeSection(sectionKey) {
+    if (isPerformanceLocked()) return;
+    const sl = activeSetlist();
+    const def = getSectionDefs(sl).find(item => item.key === sectionKey);
+    if (!def || def.kind === 'shelf') return;
+    const songs = sl.sections[sectionKey] || [];
+    const destination = getShelfDef(sl);
+    const message = songs.length
+      ? `Remove ${def.title}? Its ${songs.length} song${songs.length === 1 ? '' : 's'} will be moved to ${destination.title}.`
+      : `Remove ${def.title}?`;
+    if (!confirm(message)) return;
+    sl.sections[destination.key] ||= [];
+    songs.forEach(id => { if (!sl.sections[destination.key].includes(id)) sl.sections[destination.key].push(id); });
+    delete sl.sections[sectionKey];
+    sl.sectionDefs = getSectionDefs(sl).filter(item => item.key !== sectionKey);
+    sectionScrollPositions.delete(sectionKey);
+    saveState(); renderBoard();
+  }
+
+  function createSetlist(copyActive = false) {
+    if (isPerformanceLocked()) return;
+    const name = prompt(copyActive ? 'Name the duplicated setlist:' : 'Name the new setlist:', copyActive ? `${activeSetlist().name} Copy` : 'New Gig');
+    if (!name?.trim()) return;
+    let sections;
+    let sectionDefs;
+    if (copyActive) {
+      sections = deepClone(activeSetlist().sections);
+      sectionDefs = deepClone(getSectionDefs(activeSetlist()));
+    } else {
+      sectionDefs = DEFAULT_SECTION_DEFS.map(def => ({...def}));
+      sections = Object.fromEntries(sectionDefs.map(def => [def.key, []]));
+      sections[getShelfDef({sectionDefs}).key] = state.songs.map(s => s.id).sort((a,b) => getSong(a).title.localeCompare(getSong(b).title));
+    }
+    const sl = { id: uid(), name: name.trim(), sections, sectionDefs };
+    state.setlists.push(sl); state.activeSetlistId = sl.id; saveState(); renderAll();
+  }
+  function renameSetlist() {
+    if (isPerformanceLocked()) return;
+    const sl = activeSetlist(); const name = prompt('Rename this setlist:', sl.name); if (!name?.trim()) return;
+    sl.name = name.trim(); saveState(); renderSetlistSelect();
+  }
+
+  function saveSetlistSnapshot() {
+    if (isPerformanceLocked()) return;
+    const sl = activeSetlist();
+    const defaultName = `${sl.name} - ${new Date().toLocaleDateString()}`;
+    const name = prompt('Name this saved setlist:', defaultName);
+    if (!name?.trim()) return;
+    state.savedSnapshots ||= [];
+    state.savedSnapshots.push({
+      id: uid(),
+      name: name.trim(),
+      createdAt: new Date().toISOString(),
+      sourceSetlistName: sl.name,
+      sectionDefs: deepClone(getSectionDefs(sl)),
+      sections: deepClone(sl.sections)
+    });
+    saveState();
+    $('saveStatus').textContent = `Saved setlist: ${name.trim()}`;
+  }
+
+  function renderSnapshotsList() {
+    const box = $('snapshotsList');
+    box.textContent = '';
+    const items = [...(state.savedSnapshots || [])].sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+    if (!items.length) {
+      const empty = document.createElement('p');
+      empty.textContent = 'No saved setlists yet. Arrange your sets, then choose Save Setlist.';
+      empty.style.color = '#6b7280';
+      box.appendChild(empty);
+      return;
+    }
+    items.forEach(snapshot => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;border:1px solid #d1d5db;border-radius:10px;padding:10px;';
+      const info = document.createElement('div');
+      const title = document.createElement('strong'); title.textContent = snapshot.name;
+      const meta = document.createElement('div'); meta.style.cssText='font-size:12px;color:#6b7280;margin-top:3px;';
+      const sets = snapshot.sectionDefs.filter(d => d.kind !== 'shelf').map(d => d.title).join(' • ');
+      const date = snapshot.createdAt ? new Date(snapshot.createdAt).toLocaleDateString() : '';
+      meta.textContent = [date, sets].filter(Boolean).join(' — ');
+      info.append(title, meta);
+      const load = document.createElement('button'); load.type='button'; load.className='btn primary small'; load.textContent='Load';
+      load.disabled = isPerformanceLocked();
+      load.addEventListener('click', () => loadSetlistSnapshot(snapshot.id));
+      const del = document.createElement('button'); del.type='button'; del.className='btn danger small'; del.textContent='Delete';
+      del.disabled = isPerformanceLocked();
+      del.addEventListener('click', () => deleteSetlistSnapshot(snapshot.id));
+      row.append(info, load, del); box.appendChild(row);
+    });
+  }
+
+  function openSnapshotsDialog() {
+    renderSnapshotsList();
+    $('snapshotsDialog').showModal();
+  }
+
+  function loadSetlistSnapshot(snapshotId) {
+    if (isPerformanceLocked()) return;
+    const snapshot = (state.savedSnapshots || []).find(item => item.id === snapshotId);
+    if (!snapshot) return;
+    if (!confirm(`Load “${snapshot.name}”? This will rearrange the current setlist but will not delete songs from your library.`)) return;
+    const sl = activeSetlist();
+    const validIds = new Set(state.songs.map(song => song.id));
+    const newDefs = deepClone(snapshot.sectionDefs);
+    if (!newDefs.some(def => def.kind === 'shelf')) newDefs.push({key:'shelf', title:'SHELF', kind:'shelf'});
+    const newSections = {};
+    const placed = new Set();
+    newDefs.forEach(def => {
+      const source = Array.isArray(snapshot.sections[def.key]) ? snapshot.sections[def.key] : [];
+      newSections[def.key] = source.filter(id => validIds.has(id) && !placed.has(id) && placed.add(id));
+    });
+    const shelfDef = newDefs.find(def => def.kind === 'shelf');
+    state.songs.forEach(song => {
+      if (!placed.has(song.id)) newSections[shelfDef.key].push(song.id);
+    });
+    sl.sectionDefs = newDefs;
+    sl.sections = newSections;
+    selectedSongIds.clear();
+    sectionScrollPositions.clear();
+    saveState(); renderAll();
+    $('snapshotsDialog').close();
+    alert(`Loaded “${snapshot.name}”. Songs added after this snapshot were kept and placed on ${shelfDef.title}.`);
+  }
+
+  function deleteSetlistSnapshot(snapshotId) {
+    if (isPerformanceLocked()) return;
+    const snapshot = (state.savedSnapshots || []).find(item => item.id === snapshotId);
+    if (!snapshot || !confirm(`Delete saved setlist “${snapshot.name}”?`)) return;
+    state.savedSnapshots = state.savedSnapshots.filter(item => item.id !== snapshotId);
+    saveState(); renderSnapshotsList();
+  }
+
+  function exportBackup() {
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `setlist-lyrics-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href);
+  }
+  function readBackupText(file) {
+    if (typeof file.text === 'function') return file.text();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error || new Error('File could not be read'));
+      reader.readAsText(file);
+    });
+  }
+
+  async function importBackup(file) {
+    if (isPerformanceLocked()) {
+      $('importStatus').textContent = '🔒 Switch to EDIT MODE before importing.';
+      return;
+    }
+    pendingImportState = null;
+    $('importStatus').textContent = `Reading ${file.name}…`;
+    try {
+      const text = await readBackupText(file);
+      const parsed = JSON.parse(text);
+      if (!parsed || !Array.isArray(parsed.songs) || !Array.isArray(parsed.setlists) || !parsed.setlists.length) throw new Error('Invalid backup structure');
+      pendingImportState = normalizeState(parsed);
+      $('importSummary').textContent = `File: ${file.name}. This backup contains ${pendingImportState.songs.length} songs and ${pendingImportState.setlists.length} setlist(s).`;
+      $('importStatus').textContent = 'Backup ready. Choose Replace & Import to continue.';
+      const dialog = $('importConfirmDialog');
+      try { dialog.showModal(); }
+      catch { dialog.setAttribute('open', ''); }
+    } catch (error) {
+      $('importStatus').textContent = `Could not import ${file.name}: ${error.message || 'invalid JSON file'}.`;
+    }
+  }
+
+  function finishBackupImport() {
+    if (!pendingImportState || isPerformanceLocked()) return;
+    state = pendingImportState;
+    pendingImportState = null;
+    selectedSongIds.clear();
+    inlineEditing = false;
+    sectionScrollPositions.clear();
+    saveState(); renderAll();
+    $('importConfirmDialog').close();
+    $('importStatus').textContent = `✓ Imported ${state.songs.length} songs and ${state.setlists.length} setlist(s).`;
+  }
+
+  function cancelBackupImport() {
+    pendingImportState = null;
+    $('importConfirmDialog').close();
+    $('importStatus').textContent = 'Import canceled; no changes were made.';
+  }
+
+  $('setlistSelect').addEventListener('change', e => { if (isPerformanceLocked()) return; state.activeSetlistId = e.target.value; selectedSongIds.clear(); sectionScrollPositions.clear(); saveState(); renderAll(); });
+  $('setLockBtn').addEventListener('click', togglePerformanceLock);
+  $('songLockBtn').addEventListener('click', togglePerformanceLock);
+  $('newSetlistBtn').addEventListener('click', () => createSetlist(false));
+  $('duplicateSetlistBtn').addEventListener('click', () => createSetlist(true));
+  $('renameSetlistBtn').addEventListener('click', renameSetlist);
+  $('addSetBtn').addEventListener('click', addSetSection);
+  $('addSongBtn').addEventListener('click', () => openSongEditor());
+  $('searchInput').addEventListener('input', renderBoard);
+  $('selectModeBtn').addEventListener('click', () => { if (isPerformanceLocked()) return; selectMode = !selectMode; if (!selectMode) selectedSongIds.clear(); renderBoard(); updateSelectionBar(); });
+  $('clearSelectionBtn').addEventListener('click', () => { selectedSongIds.clear(); renderBoard(); updateSelectionBar(); });
+  $('bulkMoveSelect').addEventListener('change', e => { bulkMove(e.target.value); e.target.value = ''; });
+  $('saveSnapshotBtn').addEventListener('click', saveSetlistSnapshot);
+  $('manageSnapshotsBtn').addEventListener('click', openSnapshotsDialog);
+  $('backupBtn').addEventListener('click', exportBackup);
+  $('restoreInput').addEventListener('change', e => {
+    const file = e.target.files?.[0];
+    if (file) void importBackup(file);
+    e.target.value = '';
+  });
+  $('confirmImportBtn').addEventListener('click', finishBackupImport);
+  $('cancelImportBtn').addEventListener('click', cancelBackupImport);
+  $('importConfirmDialog').addEventListener('close', () => { pendingImportState = null; });
+  $('catalogSearchBtn').addEventListener('click', searchCatalog);
+  $('catalogSearchInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); searchCatalog(); } });
+  $('songForm').addEventListener('submit', e => { e.preventDefault(); saveSongFromForm(); });
+  $('deleteSongBtn').addEventListener('click', () => deleteSong($('songId').value));
+  $('prevSongBtn').addEventListener('click', () => stepPerformance(-1));
+  $('nextSongBtn').addEventListener('click', () => stepPerformance(1));
+  $('increaseFontBtn').addEventListener('click', () => { performanceFontSize = Math.min(34, performanceFontSize + 2); if (inlineEditing) $('inlineLyricsEditor').style.fontSize = `${performanceFontSize}px`; else renderPerformance(); });
+  $('decreaseFontBtn').addEventListener('click', () => { performanceFontSize = Math.max(14, performanceFontSize - 2); if (inlineEditing) $('inlineLyricsEditor').style.fontSize = `${performanceFontSize}px`; else renderPerformance(); });
+  $('lyricsLayoutSelect').addEventListener('change', e => setPerformanceLayout(e.target.value));
+  $('performanceLyrics').addEventListener('click', beginInlineEdit);
+  $('saveInlineBtn').addEventListener('click', () => finishInlineEdit(true));
+  $('cancelInlineBtn').addEventListener('click', () => finishInlineEdit(false));
+  $('alignLeftBtn').addEventListener('click', () => setPerformanceAlignment('left'));
+  $('alignCenterBtn').addEventListener('click', () => setPerformanceAlignment('center'));
+  $('alignRightBtn').addEventListener('click', () => setPerformanceAlignment('right'));
+  $('focusLyricsBtn').addEventListener('click', () => setLyricsFocusMode(true));
+  $('focusRestoreBtn').addEventListener('click', () => setLyricsFocusMode(false));
+  $('editFromPerformanceBtn').addEventListener('click', () => { if (isPerformanceLocked()) return; if (inlineEditing) finishInlineEdit(true); setLyricsFocusMode(false); $('performanceDialog').close(); openSongEditor(currentPerformanceSongId); });
+  document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => { if (btn.dataset.close === 'performanceDialog') { if (inlineEditing) finishInlineEdit(true); setLyricsFocusMode(false); } if (btn.dataset.close === 'songDialog') cleanupCatalogRequest(); $(btn.dataset.close).close(); }));
+  window.addEventListener('keydown', e => {
+    if (!$('performanceDialog').open) return;
+    if (inlineEditing) {
+      if (e.key === 'Escape') { e.preventDefault(); finishInlineEdit(false); }
+      return;
+    }
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') stepPerformance(1);
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') stepPerformance(-1);
+    if (e.key === 'Escape') { if ($('performancePanel').classList.contains('focus-mode')) setLyricsFocusMode(false); else $('performanceDialog').close(); }
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
